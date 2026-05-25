@@ -1,284 +1,121 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bubu AI V4 Final</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Bubu AI V5 TEST V2</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Arial,sans-serif;background:#f3f4f6;color:#020617}
-.wrap{max-width:1280px;margin:0 auto;padding:28px}
-.card{background:#fff;border-radius:28px;box-shadow:0 16px 35px rgba(15,23,42,.12);padding:26px;margin-bottom:24px}
-h1{font-size:34px;margin:0 0 10px;font-weight:900}
-h2{font-size:26px;margin:0 0 18px;font-weight:900}
-p{margin:0;color:#475569;line-height:1.7}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
-.two{display:grid;grid-template-columns:1fr 1.5fr;gap:14px}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-button.tab{border:0;border-radius:16px;padding:18px;font-size:18px;font-weight:900;cursor:pointer;background:#f3f4f6;color:#334155}
-button.tab.active{background:#111827;color:#fff}
-label{display:block;font-weight:800;margin:18px 0 8px;color:#0f172a}
-input,select,textarea{width:100%;border:1px solid #dbe3ef;border-radius:16px;padding:15px 16px;font-size:17px;background:#fff;outline:none;font-family:inherit}
-textarea{min-height:92px;resize:vertical;line-height:1.7}
-.hint{font-size:13px;color:#64748b;margin-top:6px}
-.resultTitle{font-size:30px;font-weight:900;margin-bottom:8px}
-.muted{color:#64748b;line-height:1.75;margin-bottom:22px}
-.miniGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px}
-.mini{background:#f8fafc;border-radius:18px;padding:18px}
-.mini .small{font-size:14px;color:#64748b;font-weight:700}
-.mini .big{font-size:24px;font-weight:900;margin-top:6px}
-.cost{background:#fff1f2;border-radius:24px;padding:24px;margin-bottom:18px}
-.cost .small{color:#e11d48;font-weight:800}
-.cost .num{font-size:44px;color:#e11d48;font-weight:900;margin-top:5px}
-.priceGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.price{border-radius:24px;padding:24px}
-.green{background:#ecfdf5}.blue{background:#eff6ff}.purple{background:#faf5ff;border:1px solid #eadcff}
-.price .label{font-weight:800;margin-bottom:6px}
-.price .num{font-size:34px;font-weight:900}
-.green .label,.green .num,.green .profit{color:#059669}
-.blue .label,.blue .num,.blue .profit{color:#2563eb}
-.profit{font-size:14px;margin-top:8px}
-.btn{margin-top:16px;width:100%;border:0;border-radius:18px;padding:16px;background:#111827;color:#fff;font-weight:900;font-size:17px;cursor:pointer}
-.btn.ai{background:linear-gradient(135deg,#7c3aed,#ec4899)}
-.btn:disabled{opacity:.6;cursor:not-allowed}
-.box{white-space:pre-wrap;background:#fff;border:1px solid #e9d5ff;border-radius:18px;padding:18px;min-height:170px;line-height:1.8;font-size:16px}
-.hidden{display:none}
-@media(max-width:900px){.wrap{padding:16px}.grid,.two,.tabs,.miniGrid,.priceGrid{grid-template-columns:1fr}h1{font-size:28px}}
+body{font-family:Arial;background:#f3f4f6;margin:0;padding:20px;color:#111}
+.card{background:#fff;border-radius:20px;padding:20px;margin-bottom:20px}
+textarea,input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #ccc;margin-top:8px}
+textarea{min-height:120px}
+button{padding:14px 18px;border:0;border-radius:14px;font-weight:700;cursor:pointer}
+.ai{background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff;width:100%;margin-top:12px}
+.copy{background:#111827;color:#fff;width:100%;margin-top:12px}
+.preview{background:#faf5ff;border:1px solid #e9d5ff;padding:18px;border-radius:18px;white-space:pre-wrap;line-height:1.8}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <h1>Bubu AI V4 Final｜愛+1上架神器</h1>
-    <p>打字會即時更新。前段固定愛+1格式，AI只負責文案、提醒、Hashtag。</p>
-  </div>
 
-  <div class="card">
-    <div class="tabs">
-      <button id="btnTaiwan" class="tab active" onclick="setMode('taiwan')">台灣拿貨版</button>
-      <button id="btnKorea" class="tab" onclick="setMode('korea')">韓國進貨版</button>
-    </div>
-  </div>
+<div class="card">
+<h1>🔥 Bubu AI V5 TEST V2</h1>
+<p>愛+1＋AI文案合併版</p>
+</div>
 
-  <div class="grid">
-    <div class="card">
-      <h2>輸入商品資料</h2>
+<div class="grid">
 
-      <div class="two">
-        <div>
-          <label>廠商 / 代號</label>
-          <input id="vendorCode" value="MK" oninput="calculate()" />
-          <div class="hint">例如 BC、MK；沒有可空白。</div>
-        </div>
-        <div>
-          <label>商品名稱</label>
-          <input id="productName" value="K15-0903 刺繡小可頌🥐T" oninput="calculate()" />
-        </div>
-      </div>
+<div class="card">
+<h2>① 廠商原文</h2>
 
-      <div id="taiwanInputs">
-        <label>台灣拿貨價 NT$</label>
-        <input id="taiwanCost" type="number" value="220" oninput="calculate()" />
-        <label>台灣端處理成本 NT$</label>
-        <input id="taiwanHandling" type="number" value="10" oninput="calculate()" />
-      </div>
+<label>廠商代碼</label>
+<input id="vendorCode" value="BA">
 
-      <div id="koreaInputs" class="hidden">
-        <label>韓國拿貨價 / S</label>
-        <input id="koreaCost" type="number" value="340" oninput="calculate()" />
-        <label>S 換算倍率</label>
-        <input id="koreaRate" type="number" value="1.27" step="0.01" oninput="calculate()" />
-      </div>
+<label>商品分類</label>
+<select id="category">
+<option value="auto">AI自動判斷</option>
+<option value="clothing">服飾</option>
+<option value="skincare">保養品</option>
+<option value="life">生活用品</option>
+</select>
 
-      <label>商品類型</label>
-      <select id="category" onchange="calculate()">
-        <option value="clothing" selected>衣服</option>
-        <option value="skincare">保養品 / 彩妝</option>
-        <option value="heavy">重量型生活用品</option>
-        <option value="hot">爆紅話題商品</option>
-      </select>
+<label>貼上廠商原文</label>
+<textarea id="rawText"></textarea>
 
-      <label>顏色欄位</label>
-      <textarea id="colorField" oninput="calculate()">杏，深藍</textarea>
+<button class="ai" onclick="parseVendor()">✨ AI 自動整理商品</button>
 
-      <label>規格欄位</label>
-      <textarea id="specField" oninput="calculate()">F</textarea>
+</div>
 
-      <label>尺寸 / 補充資訊</label>
-      <textarea id="sizeText" oninput="calculate()">胸寬53／衣長62</textarea>
+<div class="card">
+<h2>② 完整貼文預覽</h2>
 
-      <label>原始文案 / 商品賣點</label>
-      <textarea id="rawCopy" style="min-height:145px">刺繡小可頌T
-落肩半袖
-薄款
-正韓服飾</textarea>
+<div id="fullPost" class="preview">
+請先貼廠商原文
+</div>
 
-      <label>文案用途</label>
-      <select id="copyType">
-        <option>社團上架文</option>
-        <option>IG文案</option>
-        <option>Line群發文</option>
-        <option>愛+1上架格式</option>
-        <option>批客簡短版</option>
-      </select>
+<button class="copy" onclick="copyFullPost()">
+📋 一鍵複製完整貼文
+</button>
 
-      <button class="btn ai" id="aiBtn" onclick="generateCopy()">✨ AI生成闆娘風格文案</button>
-    </div>
+</div>
 
-    <div class="card">
-      <div id="rProduct" class="resultTitle"></div>
-      <div id="rNote" class="muted">愛+1格式固定，AI不會亂改標題、規格與價格。</div>
-
-      <div class="miniGrid">
-        <div class="mini"><div class="small">計算模式</div><div id="rMode" class="big"></div></div>
-        <div class="mini"><div class="small">商品類型</div><div id="rCategory" class="big"></div></div>
-      </div>
-
-      <div class="cost"><div class="small">真正落地成本</div><div id="rLanded" class="num"></div></div>
-
-      <div class="priceGrid">
-        <div class="price green"><div class="label">價格建議</div><div id="rRetail" class="num"></div><div id="rRetailProfit" class="profit"></div></div>
-        <div class="price blue"><div class="label">批客建議</div><div id="rWholesale" class="num"></div><div id="rWholesaleProfit" class="profit"></div></div>
-      </div>
-
-      <button class="btn" onclick="copySKU()">一鍵複製愛+1格式</button>
-
-      <div class="card purple" style="box-shadow:none;margin-top:22px;margin-bottom:0">
-        <h2>愛+1社團格式預覽</h2>
-        <div id="skuPreview" class="box"></div>
-      </div>
-
-      <div class="card purple" style="box-shadow:none;margin-top:22px;margin-bottom:0">
-        <h2>AI 文案預覽</h2>
-        <div id="aiResult" class="box">按左邊「AI生成闆娘風格文案」。</div>
-        <button class="btn" onclick="copyAI()">複製完整貼文</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
-let mode='taiwan';
 
-const settings={
-  clothing:{label:'衣服',twAddRetail:54,twAddWholesale:40,twRetailRate:.8,twWholesaleRate:.85,kRetailAdd:160,kWholesaleAdd:90},
-  skincare:{label:'保養品 / 彩妝',twAddRetail:54,twAddWholesale:40,twRetailRate:.8,twWholesaleRate:.85,kRetailAdd:160,kWholesaleAdd:90},
-  heavy:{label:'重量型生活用品',twAddRetail:54,twAddWholesale:40,twRetailRate:.8,twWholesaleRate:.85,kRetailAdd:180,kWholesaleAdd:100},
-  hot:{label:'爆紅話題商品',twAddRetail:60,twAddWholesale:45,twRetailRate:.75,twWholesaleRate:.85,kRetailAdd:180,kWholesaleAdd:100}
-};
+async function parseVendor(){
 
-function ceil10(n){return Math.ceil(n/10)*10;}
-function money(n){return 'NT$'+Math.round(n).toLocaleString();}
-function splitList(v){return (v||'').split(/[，,、\n]/).map(x=>x.trim()).filter(Boolean);}
-function fullName(){
-  const vendor=document.getElementById('vendorCode').value.trim();
-  const name=document.getElementById('productName').value.trim();
-  return vendor ? vendor+'｜'+name : name;
+ const rawText=document.getElementById("rawText").value;
+
+ const response=await fetch("/api/parse-vendor",{
+   method:"POST",
+   headers:{
+     "Content-Type":"application/json"
+   },
+   body:JSON.stringify({
+     rawText,
+     vendorCode:document.getElementById("vendorCode").value,
+     category:document.getElementById("category").value
+   })
+ });
+
+ const data=await response.json();
+
+ const fullText=`
+${data.title}
+
+顏色：${data.colors}
+規格：${data.specs}
+價格：${data.price}
+
+📏 尺寸（平量cm）
+${data.sizeText}
+
+——————————
+
+${data.copy}
+
+Hashtag：
+${data.hashtags}
+`;
+
+ document.getElementById("fullPost").innerText=fullText;
+
 }
 
-function setMode(m){
-  mode=m;
-  document.getElementById('btnTaiwan').classList.toggle('active',m==='taiwan');
-  document.getElementById('btnKorea').classList.toggle('active',m==='korea');
-  document.getElementById('taiwanInputs').classList.toggle('hidden',m!=='taiwan');
-  document.getElementById('koreaInputs').classList.toggle('hidden',m!=='korea');
-  calculate();
+function copyFullPost(){
+
+ navigator.clipboard.writeText(
+   document.getElementById("fullPost").innerText
+ );
+
+ alert("已複製完整貼文");
+
 }
 
-function calculate(){
-  const cat=document.getElementById('category').value;
-  const s=settings[cat];
-  let landed=0, retail=0, wholesale=0;
-
-  if(mode==='taiwan'){
-    const c=Number(document.getElementById('taiwanCost').value)||0;
-    const h=Number(document.getElementById('taiwanHandling').value)||0;
-    landed=Math.ceil(c+h);
-    retail=ceil10((landed+s.twAddRetail)/s.twRetailRate);
-    wholesale=ceil10((landed+s.twAddWholesale)/s.twWholesaleRate);
-  }else{
-    const cost=Number(document.getElementById('koreaCost').value)||0;
-    const rate=Number(document.getElementById('koreaRate').value)||1.27;
-    landed=Math.ceil(cost*rate);
-    retail=ceil10(landed+s.kRetailAdd);
-    wholesale=ceil10(landed+s.kWholesaleAdd);
-  }
-
-  document.getElementById('rProduct').textContent=fullName();
-  document.getElementById('rMode').textContent=mode==='taiwan'?'台灣':'韓國';
-  document.getElementById('rCategory').textContent=s.label;
-  document.getElementById('rLanded').textContent=money(landed);
-  document.getElementById('rRetail').textContent=money(retail);
-  document.getElementById('rWholesale').textContent=money(wholesale);
-  document.getElementById('rRetailProfit').textContent='預估毛利 '+money(retail-landed);
-  document.getElementById('rWholesaleProfit').textContent='預估毛利 '+money(wholesale-landed);
-  buildSKU(retail);
-}
-
-function buildSKU(retail){
-  const colors=splitList(document.getElementById('colorField').value);
-  const specs=splitList(document.getElementById('specField').value);
-  const size=document.getElementById('sizeText').value.trim();
-
-  const header=[
-    fullName(),
-    '顏色：'+(colors.join('，')||'—'),
-    '規格：'+(specs.join('，')||'—'),
-    '價格：'+retail
-  ].join('\n');
-
-  const sizeBlock=size ? '\n\n📏 尺寸（平量cm）\n'+size : '';
-  document.getElementById('skuPreview').textContent=header+sizeBlock;
-}
-
-function copySKU(){
-  navigator.clipboard.writeText(document.getElementById('skuPreview').textContent).then(()=>alert('已複製愛+1格式'));
-}
-function copyAI(){
-  navigator.clipboard.writeText(document.getElementById('aiResult').innerText).then(()=>alert('已複製完整貼文'));
-}
-
-async function generateCopy(){
-  calculate();
-  const fixedHeader=document.getElementById('skuPreview').textContent;
-  const btn=document.getElementById('aiBtn');
-  const box=document.getElementById('aiResult');
-  btn.disabled=true;
-  btn.textContent='AI 生成中...';
-  box.textContent=fixedHeader+'\n\nAI 正在生成文案中，請稍候...';
-
-  try{
-    const payload={
-      fixedHeader,
-      productName:fullName(),
-      category:document.getElementById('rCategory').textContent,
-      mode:mode==='taiwan'?'台灣拿貨':'韓國進貨',
-      retailPrice:document.getElementById('rRetail').textContent,
-      wholesalePrice:document.getElementById('rWholesale').textContent,
-      colors:document.getElementById('colorField').value,
-      specs:document.getElementById('specField').value,
-      sizeText:document.getElementById('sizeText').value,
-      rawCopy:document.getElementById('rawCopy').value,
-      copyType:document.getElementById('copyType').value
-    };
-
-    const res=await fetch('/api/generate-copy',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
-    });
-    const data=await res.json();
-    if(!res.ok) throw new Error(data.error||'AI 生成失敗');
-    box.textContent=fixedHeader+'\n\n'+(data.copy||'沒有生成內容，請再試一次。');
-  }catch(err){
-    box.textContent=fixedHeader+'\n\nAI 生成失敗：'+err.message+'\n\n請確認 Vercel 已設定 OPENAI_API_KEY。';
-  }finally{
-    btn.disabled=false;
-    btn.textContent='✨ AI生成闆娘風格文案';
-  }
-}
-
-document.addEventListener('DOMContentLoaded', calculate);
 </script>
+
 </body>
 </html>
