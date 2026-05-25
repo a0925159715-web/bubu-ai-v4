@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bubu AI 愛+1欄位＋文案版 V3</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Arial,sans-serif;background:#f3f4f6;color:#020617}.wrap{max-width:1280px;margin:0 auto;padding:32px}.card{background:#fff;border-radius:28px;box-shadow:0 16px 35px rgba(15,23,42,.12);padding:28px;margin-bottom:26px}h1{font-size:34px;margin:0 0 12px;font-weight:900}h2{font-size:26px;margin:0 0 20px;font-weight:900}p{margin:0;color:#475569;line-height:1.7}.grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}.two{display:grid;grid-template-columns:1fr 1.5fr;gap:14px}label{display:block;font-weight:800;margin:18px 0 8px;color:#0f172a}input,select,textarea{width:100%;border:1px solid #dbe3ef;border-radius:16px;padding:15px 16px;font-size:17px;background:white;outline:none;font-family:inherit}textarea{min-height:92px;resize:vertical;line-height:1.7}.hint{font-size:13px;color:#64748b;margin-top:6px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:14px}button.tab{border:0;border-radius:16px;padding:18px;font-size:18px;font-weight:900;cursor:pointer;background:#f3f4f6;color:#334155}button.tab.active{background:#111827;color:#fff}.resultTitle{font-size:30px;font-weight:900;margin-bottom:8px}.muted{color:#64748b;line-height:1.75;margin-bottom:24px}.miniGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}.mini{background:#f8fafc;border-radius:18px;padding:20px}.mini .small{font-size:14px;color:#64748b;font-weight:700}.mini .big{font-size:24px;font-weight:900;margin-top:6px}.rows{margin:8px 0 24px}.row{display:flex;justify-content:space-between;gap:20px;padding:8px 0;font-size:16px}.cost{background:#fff1f2;border-radius:24px;padding:24px;margin-bottom:18px}.cost .small{color:#e11d48;font-weight:800}.cost .num{font-size:44px;color:#e11d48;font-weight:900;margin-top:5px}.priceGrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.price{border-radius:24px;padding:24px}.green{background:#ecfdf5}.blue{background:#eff6ff}.purple{background:#faf5ff;border:1px solid #eadcff}.price .label{font-weight:800;margin-bottom:6px}.price .num{font-size:34px;font-weight:900}.green .label,.green .num,.green .profit{color:#059669}.blue .label,.blue .num,.blue .profit{color:#2563eb}.profit{font-size:14px;margin-top:8px}.btn{margin-top:18px;width:100%;border:0;border-radius:18px;padding:16px;background:#111827;color:white;font-weight:900;font-size:17px;cursor:pointer}.btn.ai{background:linear-gradient(135deg,#7c3aed,#ec4899)}.btn:disabled{opacity:.6;cursor:not-allowed}.copyBox{white-space:pre-wrap;background:#fff;border:1px solid #e9d5ff;border-radius:18px;padding:18px;min-height:180px;line-height:1.8;font-size:16px}.skuPreview{background:#f8fafc;border-radius:18px;padding:18px;white-space:pre-wrap;line-height:1.8;border:1px dashed #cbd5e1}.hidden{display:none}@media(max-width:900px){.wrap{padding:16px}.grid,.two,.priceGrid,.miniGrid{grid-template-columns:1fr}h1{font-size:28px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card"><h1>Bubu AI V4 Final｜愛+1上架神器</h1><p>愛+1社團格式固定，AI只負責文案／提醒／Hashtag。</p></div>
+<div class="card"><div class="tabs"><button id="btnKorea" class="tab" onclick="setMode('korea')">韓國進貨版</button><button id="btnTaiwan" class="tab active" onclick="setMode('taiwan')">台灣拿貨版</button></div></div>
+<div class="grid">
+<div class="card">
+<h2>輸入商品資料</h2>
+<div class="two"><div><label>廠商編號</label><input id="vendorCode" value="BQ6468" oninput="calculate()" /><div class="hint">衣服可填；保養品沒有可空白。</div></div><div><label>商品名稱</label><input id="productName" value="法式蕾絲V領針織假2件" oninput="calculate()" /></div></div>
+<div id="koreaInputs" class="hidden"><label>韓國拿貨價 KRW</label><input id="krw" type="number" value="6500" oninput="calculate()" /><label>重量 g</label><input id="weight" type="number" value="36" oninput="calculate()" /></div>
+<div id="taiwanInputs"><label>台灣拿貨價 NT$</label><input id="taiwanCost" type="number" value="220" oninput="calculate()" /></div>
+<label>商品類型</label><select id="category" onchange="calculate()"><option value="clothing" selected>衣服</option><option value="skincare">保養品 / 彩妝</option><option value="heavy">重量型生活用品</option><option value="hot">爆紅話題商品</option></select>
+<div id="koreaExtra" class="hidden"><label>韓國服務費 %</label><input id="serviceFee" type="number" value="5" oninput="calculate()" /><label>空運 NT$/kg</label><input id="shippingPerKg" type="number" value="180" oninput="calculate()" /></div>
+<div id="taiwanExtra"><label>台灣端處理成本 NT$（可選）</label><input id="taiwanHandling" type="number" value="0" oninput="calculate()" /></div>
+<label>規格欄位</label><textarea id="specField" oninput="calculate()">S，M，L</textarea><div class="hint">給愛+1抓單用，例如：S，M，L / 單一尺寸 / 10入。</div>
+<label>顏色欄位</label><textarea id="colorField" oninput="calculate()">燕麥，卡其，深灰</textarea><div class="hint">給愛+1抓單用，例如：黑，白，咖 / 蘋果薄荷，薄荷，草莓。</div>
+<label>尺寸 / 補充資訊</label><textarea id="sizeText" oninput="calculate()">胸47cm／長55cm</textarea><div class="hint">自由貼上即可，不拆欄位。這行不放冒號，避免愛+1誤抓。</div>
+<label>原始文案 / 商品賣點</label><textarea id="rawCopy" style="min-height:140px">看似不經意的精緻，最迷人。
+輕薄有彈性的針織面料，夏秋交替很適合。
+白色V領吊帶搭配蕾絲，氛圍感很好。
+微寬鬆版型，搭裙子或牛仔褲都可以。</textarea><div class="hint">效期如果有，直接放這裡，不另外拆。</div>
+<label>文案用途</label><select id="copyType"><option>社團上架文</option><option>IG文案</option><option>Line群發文</option><option>愛+1上架格式</option><option>批客簡短版</option></select>
+<button class="btn ai" id="aiBtn" onclick="generateCopy()">✨ AI生成闆娘風格文案</button>
+</div>
+<div class="card">
+<div id="rProduct" class="resultTitle">BQ6468 法式蕾絲V領針織假2件</div><div id="rNote" class="muted">台灣拿貨｜衣服｜規格與顏色已獨立，方便愛+1抓單。</div>
+<div class="miniGrid"><div class="mini"><div class="small">計算模式</div><div id="rMode" class="big">台灣</div></div><div class="mini"><div class="small">商品類型</div><div id="rCategory" class="big">衣服</div></div></div>
+<div class="rows"><div class="row"><span>廠商編號</span><span id="rVendor">BQ6468</span></div><div class="row"><span>商品名稱</span><span id="rName">法式蕾絲V領針織假2件</span></div><div id="koreaRows" class="hidden"><div class="row"><span>韓國拿貨價</span><span id="rKrw">₩6,500</span></div><div class="row"><span>商品台幣成本</span><span id="rTwdCost">NT$159</span></div><div class="row"><span>韓國服務費</span><span id="rService">NT$8</span></div><div class="row"><span>空運費</span><span id="rShipping">NT$7</span></div></div><div id="taiwanRows"><div class="row"><span>台灣拿貨價</span><span id="rTaiwanCost">NT$220</span></div><div class="row"><span>台灣端處理成本</span><span id="rHandling">NT$10</span></div></div></div>
+<div class="cost"><div class="small">真正落地成本</div><div id="rLanded" class="num">NT$220</div></div>
+<div class="priceGrid"><div class="price green"><div class="label">零售建議</div><div id="rRetail" class="num">NT$350</div><div id="rRetailProfit" class="profit">預估毛利 NT$130</div></div><div class="price blue"><div class="label">批客建議</div><div id="rWholesale" class="num">NT$310</div><div id="rWholesaleProfit" class="profit">預估毛利 NT$90</div></div></div>
+<button class="btn" onclick="copyPrice()">一鍵複製愛+1欄位</button>
+<div class="card purple" style="box-shadow:none;margin-top:22px;margin-bottom:0"><h2>愛+1欄位預覽</h2><p style="margin-bottom:14px;color:#7c3aed;font-weight:800;">可直接複製，貼到後台欄位使用。</p><div id="skuPreview" class="skuPreview"></div></div>
+<div class="card purple" style="box-shadow:none;margin-top:22px;margin-bottom:0"><h2>AI 文案預覽</h2><div id="aiResult" class="copyBox">按左邊「AI生成闆娘風格文案」。</div><button class="btn" onclick="copyAI()">複製 AI 文案</button></div>
+</div>
+</div>
+</div>
+<script>
+let mode='taiwan';
+const settings={clothing:{label:'衣服',exchange:40,retailRate:.75,wholesaleRate:.85,twAddRetail:54,twAddWholesale:40,twRetailRate:.8,twWholesaleRate:.85},skincare:{label:'保養品 / 彩妝',exchange:41,retailRate:.8,wholesaleRate:.85,twAddRetail:54,twAddWholesale:40,twRetailRate:.8,twWholesaleRate:.85},heavy:{label:'重量型生活用品',exchange:42,retailRate:.8,wholesaleRate:.85,twAddRetail:54,twAddWholesale:40,twRetailRate:.8,twWholesaleRate:.85},hot:{label:'爆紅話題商品',exchange:42,retailRate:.7,wholesaleRate:.8,twAddRetail:60,twAddWholesale:45,twRetailRate:.75,twWholesaleRate:.85}};
+function money(n){return 'NT$'+Math.round(n).toLocaleString()}function krw(n){return '₩'+Math.round(n).toLocaleString()}function ceil10(n){return Math.ceil(n/10)*10}function splitList(v){return v.split(/[，,、\\n]/).map(x=>x.trim()).filter(Boolean)}
+function setMode(m){mode=m;document.getElementById('btnKorea').classList.toggle('active',m==='korea');document.getElementById('btnTaiwan').classList.toggle('active',m==='taiwan');['koreaInputs','koreaExtra','koreaRows'].forEach(id=>document.getElementById(id).classList.toggle('hidden',m!=='korea'));['taiwanInputs','taiwanExtra','taiwanRows'].forEach(id=>document.getElementById(id).classList.toggle('hidden',m!=='taiwan'));calculate()}
+function fullName(){const v=document.getElementById('vendorCode').value.trim();const n=document.getElementById('productName').value.trim();return v ? v+' '+n : n}
+function fixedHeader(){return document.getElementById('skuPreview').textContent}
+function calculate(){const cat=document.getElementById('category').value,s=settings[cat];let landed,retail,wholesale;const vendor=document.getElementById('vendorCode').value.trim(),name=document.getElementById('productName').value.trim();document.getElementById('rProduct').textContent=fullName();document.getElementById('rVendor').textContent=vendor||'—';document.getElementById('rName').textContent=name||'—';document.getElementById('rMode').textContent=mode==='korea'?'韓國':'台灣';document.getElementById('rCategory').textContent=s.label;if(mode==='korea'){const k=+document.getElementById('krw').value||0,w=+document.getElementById('weight').value||0,fee=+document.getElementById('serviceFee').value||0,shipKg=+document.getElementById('shippingPerKg').value||0;const twd=k/s.exchange,service=twd*fee/100,ship=w/1000*shipKg;landed=Math.ceil(twd+service+ship);retail=ceil10(landed/s.retailRate);wholesale=ceil10(landed/s.wholesaleRate);document.getElementById('rKrw').textContent=krw(k);document.getElementById('rTwdCost').textContent=money(Math.ceil(twd));document.getElementById('rService').textContent=money(Math.ceil(service));document.getElementById('rShipping').textContent=money(Math.ceil(ship));}else{const c=+document.getElementById('taiwanCost').value||0,h=+document.getElementById('taiwanHandling').value||0;landed=Math.ceil(c+h);retail=ceil10((c+h+s.twAddRetail)/s.twRetailRate);wholesale=ceil10((c+h+s.twAddWholesale)/s.twWholesaleRate);document.getElementById('rTaiwanCost').textContent=money(c);document.getElementById('rHandling').textContent=money(h)}document.getElementById('rLanded').textContent=money(landed);document.getElementById('rRetail').textContent=money(retail);document.getElementById('rWholesale').textContent=money(wholesale);document.getElementById('rRetailProfit').textContent='預估毛利 '+money(retail-landed);document.getElementById('rWholesaleProfit').textContent='預估毛利 '+money(wholesale-landed);buildSkuPreview(retail,wholesale)}
+function buildSkuPreview(retail,wholesale){
+const specs=splitList(document.getElementById('specField').value);
+const colors=splitList(document.getElementById('colorField').value);
+const size=document.getElementById('sizeText').value.trim();
+
+let sizeBlock = size ? `
+
+📏 尺寸（平量cm）
+${size}` : '';
+
+const text=[
+`${fullName()}`,
+`顏色：${colors.join('，')||'—'}`,
+`規格：${specs.join('，')||'—'}`,
+`價格：${retail}`
+].join('
+') + sizeBlock;
+
+document.getElementById('skuPreview').textContent=text;
+}
+function copyPrice(){navigator.clipboard.writeText(document.getElementById('skuPreview').textContent).then(()=>alert('已複製愛+1欄位'))}function copyAI(){navigator.clipboard.writeText(document.getElementById('aiResult').innerText).then(()=>alert('已複製 AI 文案'))}
+async function generateCopy(){calculate();const btn=document.getElementById("aiBtn"),box=document.getElementById("aiResult");btn.disabled=true;btn.textContent="AI 生成中...";box.textContent=(fixedHeader()+"\n\nAI 正在生成文案中，請稍候...").replace(/\\n/g,"\n");try{const payload={vendorCode:document.getElementById("vendorCode").value,productName:document.getElementById("productName").value,fullName:fullName(),fixedHeader:fixedHeader(),category:document.getElementById("rCategory").textContent,mode:mode==="korea"?"韓國進貨":"台灣拿貨",retailPrice:document.getElementById("rRetail").textContent,wholesalePrice:document.getElementById("rWholesale").textContent,landedCost:document.getElementById("rLanded").textContent,specs:document.getElementById("specField").value,colors:document.getElementById("colorField").value,sizeText:document.getElementById("sizeText").value,rawCopy:document.getElementById("rawCopy").value,copyType:document.getElementById("copyType").value};const res=await fetch("/api/generate-copy",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const text=await res.text();let data;try{data=JSON.parse(text)}catch(e){throw new Error("後端沒有回傳 JSON，請重新部署新版 ZIP")}if(!res.ok)throw new Error(data.error||"AI 生成失敗");box.textContent=(fixedHeader()+"\n\n"+(data.copy||"沒有生成內容，請再試一次。")).replace(/\\n/g,"\n")}catch(err){box.textContent=(fixedHeader()+"\n\nAI 生成失敗："+err.message+"\n\n請確認 Netlify 已設定 OPENAI_API_KEY，並且有重新 Deploy。").replace(/\\n/g,"\n")}finally{btn.disabled=false;btn.textContent="✨ AI生成闆娘風格文案"}}
+calculate();
+</script>
+</body>
+</html>
