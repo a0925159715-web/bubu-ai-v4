@@ -1,1 +1,1 @@
-Bubu AI V5 AutoAdd
+Bubu AI V5 Readable Fixed
