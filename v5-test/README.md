@@ -1,1 +1,1 @@
-Bubu AI V5 Label Cost Fixed
+Bubu AI V6 Cloud

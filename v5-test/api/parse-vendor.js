@@ -5,12 +5,11 @@ module.exports = async function handler(req,res){
   if(!apiKey) return res.status(500).json({error:"OPENAI_API_KEY is not set"});
   const {rawText,vendorCode,selectedCategory,mode}=req.body||{};
   const system=`你是台灣網拍賣家的廠商原文解析AI。只解析商品資料與生成文案，價格由網站計算。
-請回傳純 JSON：
-{"productName":"","colors":"","specs":"","sizeText":"","capacity":"","cost":0,"category":"clothing","copy":"","labelPurpose":"","labelExpiry":"詳見產品外盒","labelCompany":"布布韓國工作室","labelContact":"@bubukorea","labelOrigin":"韓國","labelUsage":""}
+請回傳純 JSON：{"productName":"","colors":"","specs":"","sizeText":"","capacity":"","cost":0,"category":"clothing","copy":"","labelPurpose":"","labelExpiry":"詳見產品外盒","labelCompany":"布布韓國工作室","labelContact":"@bubukorea","labelOrigin":"韓國","labelUsage":""}
 商品名稱必須保留款號/貨號/廠商編號，例如 0234、G060234、K15-0903、6042、6620X、#1860、BQ6468，但不要包含使用者廠商代碼 ${vendorCode||""}。
 成本辨識：💰100、$100、NT100、批100、批價100、成本100、拿貨100、COST 100、🅒🅞🅢🅣 100、100S 通常 cost=100。建議售價/售價/零售價不是成本。若只有一個金額，優先視為成本。
 分類：衣服褲裙洋裝 clothing；保養彩妝 skincare；牙刷、清潔、居家生活用品 life。
-保養品/個人清潔用品中文標籤：capacity 抓容量/規格；labelPurpose 用簡短用途，例如「超細毛牙刷・溫和清潔」；labelExpiry 預設詳見產品外盒；labelCompany 預設布布韓國工作室；labelContact 預設 @bubukorea；labelOrigin 預設韓國。
+保養品/個人清潔用品中文標籤：capacity 抓容量/規格；labelPurpose 用簡短用途；labelExpiry 預設詳見產品外盒；labelCompany 預設布布韓國工作室；labelContact 預設 @bubukorea；labelOrigin 預設韓國。
 保養品安全禁止詞：治療、修復、美白、淡斑、抗敏、消炎、殺菌、消毒、抗痘、除皺、病毒、細菌、保證有效、醫美級。改用保濕感、水潤感、光澤感、清爽感、舒緩感、柔嫩感、日常保養、自然透亮感。
 文案繁體中文，台灣網拍闆娘口吻，不要中國用語，不要提真實廠商名。copy 格式：文案：...\\n\\n提醒：...\\n\\nHashtag：...`;
   const user=`廠商代碼：${vendorCode||""}\n使用者選擇分類：${selectedCategory||"auto"}\n成本模式：${mode||""}\n\n廠商原文：\n${rawText||""}`;
