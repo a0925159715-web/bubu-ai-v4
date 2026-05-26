@@ -1,14 +1,303 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head><meta charset="UTF-8"><title>Bubu AI V6.1</title></head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bubu AI V6.1</title>
+
+<style>
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+background:#f4f4f4;
+margin:0;
+padding:20px;
+color:#111;
+}
+
+.wrap{
+max-width:1400px;
+margin:auto;
+}
+
+.card{
+background:#fff;
+padding:20px;
+border-radius:20px;
+margin-bottom:20px;
+box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+
+h1{
+font-size:36px;
+margin-bottom:10px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+textarea,input,select{
+width:100%;
+padding:12px;
+border-radius:12px;
+border:1px solid #ddd;
+margin-top:8px;
+margin-bottom:14px;
+font-size:16px;
+box-sizing:border-box;
+}
+
+textarea{
+min-height:220px;
+}
+
+.btn{
+background:#7c3aed;
+color:#fff;
+padding:14px;
+border:none;
+border-radius:14px;
+font-size:16px;
+cursor:pointer;
+width:100%;
+font-weight:700;
+}
+
+.btn.green{
+background:#059669;
+}
+
+.table{
+width:100%;
+border-collapse:collapse;
+}
+
+.table th,.table td{
+padding:14px;
+border-bottom:1px solid #eee;
+text-align:left;
+}
+
+.actionBtn{
+padding:8px 12px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+margin-right:6px;
+font-weight:700;
+}
+
+.copy{
+background:#111827;
+color:#fff;
+}
+
+.delete{
+background:#dc2626;
+color:#fff;
+}
+
+.preview{
+white-space:pre-wrap;
+background:#fafafa;
+padding:14px;
+border-radius:14px;
+margin-top:10px;
+}
+</style>
+</head>
+
 <body>
-<h1>Bubu AI V6.1 完整工作台版</h1>
-<ul>
-<li>📋 複製完整貼文</li>
-<li>📝 複製AI文案</li>
-<li>🏷️ 複製中文標籤</li>
-<li>💰 複製批價</li>
-<li>☁️ 雲端同步工作台</li>
-</ul>
+
+<div class="wrap">
+
+<div class="card">
+<h1>🔥 Bubu AI V6.1 雲端營運版</h1>
+<p>服飾 / 保養品 / 中文標籤 / 工作台同步</p>
+</div>
+
+<div class="grid">
+
+<div class="card">
+
+<h2>① 廠商原文</h2>
+
+<label>商品分類</label>
+<select id="type">
+<option value="clothing">服飾</option>
+<option value="skincare">保養品</option>
+<option value="life">生活用品</option>
+</select>
+
+<label>貼上廠商文案</label>
+<textarea id="raw"></textarea>
+
+<button class="btn" onclick="generate()">✨ AI 自動整理商品</button>
+
+</div>
+
+<div class="card">
+
+<h2>② AI解析結果</h2>
+
+<label>商品名稱</label>
+<input id="title">
+
+<label>售價</label>
+<input id="retail">
+
+<label>批價</label>
+<input id="wholesale">
+
+<label>成本</label>
+<input id="cost">
+
+<label>AI文案</label>
+<textarea id="copy"></textarea>
+
+<label>中文標籤</label>
+<textarea id="label"></textarea>
+
+<button class="btn green" onclick="saveTask()">加入雲端同步工作台</button>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>⑤ 雲端同步工作台</h2>
+
+<table class="table">
+
+<thead>
+<tr>
+<th>商品</th>
+<th>售價</th>
+<th>批價</th>
+<th>成本</th>
+<th>動作</th>
+</tr>
+</thead>
+
+<tbody id="list"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<script>
+
+let tasks=JSON.parse(localStorage.getItem("bubu_tasks")||"[]");
+
+function generate(){
+
+const raw=document.getElementById("raw").value;
+
+document.getElementById("title").value=raw.split("\\n")[0]||"未命名商品";
+
+document.getElementById("retail").value=490;
+document.getElementById("wholesale").value=420;
+document.getElementById("cost").value=260;
+
+document.getElementById("copy").value=
+"韓國人氣新品✨\\n\\n質感版型超好看，實穿又百搭。";
+
+document.getElementById("label").value=
+"用途：詳見外盒\\n保存期限：詳見外盒\\n責任業者：布布韓國工作室";
+
+}
+
+function saveTask(){
+
+const task={
+
+title:title.value,
+retail:retail.value,
+wholesale:wholesale.value,
+cost:cost.value,
+copy:copy.value,
+label:label.value
+
+};
+
+tasks.unshift(task);
+
+localStorage.setItem("bubu_tasks",JSON.stringify(tasks));
+
+render();
+
+}
+
+function render(){
+
+const list=document.getElementById("list");
+
+list.innerHTML="";
+
+tasks.forEach((t,i)=>{
+
+list.innerHTML+=`
+
+<tr>
+
+<td>${t.title}</td>
+<td>${t.retail}</td>
+<td>${t.wholesale}</td>
+<td>${t.cost}</td>
+
+<td>
+
+<button class="actionBtn copy"
+onclick="copyText(\`${"${t.copy}"}\`)">
+📝 文案
+</button>
+
+<button class="actionBtn copy"
+onclick="copyText(\`${"${t.label}"}\`)">
+🏷️ 標籤
+</button>
+
+<button class="actionBtn delete"
+onclick="del(${i})">
+刪除
+</button>
+
+</td>
+
+</tr>
+
+`;
+
+});
+
+}
+
+function del(i){
+
+tasks.splice(i,1);
+
+localStorage.setItem("bubu_tasks",JSON.stringify(tasks));
+
+render();
+
+}
+
+function copyText(text){
+
+navigator.clipboard.writeText(text);
+
+alert("已複製");
+
+}
+
+render();
+
+</script>
+
 </body>
 </html>
