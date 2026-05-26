@@ -18,43 +18,11 @@ async function loadTasks(){try{const {data,error}=await supabaseClient.from('tas
 async function addTask(silent=false){const p=calcPrices(),vendor=val('vendorCode'),name=val('productName');if(!name){if(!silent)alert('沒有商品名稱');return}const title=vendor&&!name.startsWith(vendor+'｜')?vendor+'｜'+name:name;if(tasks.some(t=>t.title===title&&String(t.cost)===String(p.cost)&&!t.done)){if(!silent)alert('工作台已有這件商品');return}const item={done:false,title,retail:p.retail,wholesale:p.wholesale,cost:p.cost,time:new Date().toLocaleString(),fullPost:get('fullPost').innerText,copy:currentCopy,label:get('labelPreview')?get('labelPreview').innerText:''};const {error}=await supabaseClient.from('tasks').insert({content:JSON.stringify(item)});if(error){alert('雲端新增失敗：'+error.message);return}await loadTasks()}
 async function toggleTask(i){const t=tasks[i],u={...t,done:!t.done};delete u.id;const {error}=await supabaseClient.from('tasks').update({content:JSON.stringify(u)}).eq('id',t.id);if(error){alert('更新失敗：'+error.message);return}await loadTasks()}
 async function deleteTask(i){const {error}=await supabaseClient.from('tasks').delete().eq('id',tasks[i].id);if(error){alert('刪除失敗：'+error.message);return}await loadTasks()}
-function renderTasks(){
-get('taskBody').innerHTML=tasks.map((t,i)=>`<tr>
-<td><span class="pill ${t.done?'done':''}">${t.done?'✅ 已同步':'⏳ 未同步'}</span></td>
-<td>${t.title}<br><span style="font-size:12px;color:#64748b">${t.time||''}</span></td>
-<td>${t.retail}</td>
-<td><b>${t.wholesale}</b></td>
-<td>${t.cost}</td>
-<td style="display:flex;gap:6px;flex-wrap:wrap">
-<button class="btn small gray" onclick="copyTaskPost(${i})">📋 文案</button>
-<button class="btn small gray" onclick="copyTaskLabel(${i})">🏷️ 標籤</button>
-<button class="btn small gray" onclick="copyWholesale(${i})">💰 批價</button>
-<button class="btn small" onclick="toggleTask(${i})">✔ 已同步</button>
-<button class="btn small red" onclick="deleteTask(${i})">刪除</button>
-</td>
-</tr>`).join('')
-}
+function renderTasks(){get('taskBody').innerHTML=tasks.map((t,i)=>`<tr><td><span class="pill ${t.done?'done':''}">${t.done?'✅ 已同步':'⏳ 未同步'}</span></td><td>${t.title}<br><span style="font-size:12px;color:#64748b">${t.time||''}</span></td><td>${t.retail}</td><td><b>${t.wholesale}</b></td><td>${t.cost}</td><td style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small gray" onclick="copyTaskPost(${i})">📋 文案</button> <button class="btn small gray" onclick="copyTaskLabel(${i})">🏷️ 標籤</button> <button class="btn small gray" onclick="copyWholesale(${i})">💰 批價</button> <button class="btn small" onclick="toggleTask(${i})">✔ 已同步</button> <button class="btn small red" onclick="deleteTask(${i})">刪除</button></td></tr>`).join('')}
 
-function copyTaskPost(i){
-  const t=tasks[i];
-  const text=t.fullPost || t.copy || t.title || '';
-  navigator.clipboard.writeText(text);
-  alert('已複製文案');
-}
-
-function copyTaskLabel(i){
-  const t=tasks[i];
-  const text=t.label || get('labelPreview').innerText || '';
-  if(!text){alert('這筆目前沒有中文標籤');return}
-  navigator.clipboard.writeText(text);
-  alert('已複製中文標籤');
-}
-
-function copyWholesale(i){
-  navigator.clipboard.writeText(String(tasks[i].wholesale||''));
-  alert('已複製批價');
-}
-
+function copyTaskPost(i){const t=tasks[i];const text=t.fullPost||t.copy||t.title||'';navigator.clipboard.writeText(text).then(()=>alert('已複製文案'))}
+function copyTaskLabel(i){const t=tasks[i];const text=t.label||get('labelPreview').innerText||'';if(!text){alert('這筆目前沒有中文標籤');return}navigator.clipboard.writeText(text).then(()=>alert('已複製中文標籤'))}
+function copyWholesale(i){navigator.clipboard.writeText(String(tasks[i].wholesale||'')).then(()=>alert('已複製批價'))}
 function copyPost(){navigator.clipboard.writeText(get('fullPost').innerText).then(()=>alert('已複製完整貼文'))}function copyLabel(){navigator.clipboard.writeText(get('labelPreview').innerText).then(()=>alert('已複製中文標籤'))}
 supabaseClient.channel('tasks-changes').on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>loadTasks()).subscribe();loadTasks();updateAll();
 </script></body></html>
