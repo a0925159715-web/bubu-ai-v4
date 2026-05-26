@@ -1,1 +1,1 @@
-Bubu AI V6 Cloud
+Bubu AI V6.1 Operational

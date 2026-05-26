@@ -5,7 +5,8 @@ module.exports = async function handler(req,res){
   if(!apiKey) return res.status(500).json({error:"OPENAI_API_KEY is not set"});
   const {rawText,vendorCode,selectedCategory,mode}=req.body||{};
   const system=`你是台灣網拍賣家的廠商原文解析AI。只解析商品資料與生成文案，價格由網站計算。
-請回傳純 JSON：{"productName":"","colors":"","specs":"","sizeText":"","capacity":"","cost":0,"category":"clothing","copy":"","labelPurpose":"","labelExpiry":"詳見產品外盒","labelCompany":"布布韓國工作室","labelContact":"@bubukorea","labelOrigin":"韓國","labelUsage":""}
+請回傳純 JSON：
+{"productName":"","colors":"","specs":"","sizeText":"","capacity":"","cost":0,"category":"clothing","copy":"","labelPurpose":"","labelExpiry":"詳見產品外盒","labelCompany":"布布韓國工作室","labelContact":"@bubukorea","labelOrigin":"韓國","labelUsage":""}
 商品名稱必須保留款號/貨號/廠商編號，例如 0234、G060234、K15-0903、6042、6620X、#1860、BQ6468，但不要包含使用者廠商代碼 ${vendorCode||""}。
 成本辨識：💰100、$100、NT100、批100、批價100、成本100、拿貨100、COST 100、🅒🅞🅢🅣 100、100S 通常 cost=100。建議售價/售價/零售價不是成本。若只有一個金額，優先視為成本。
 分類：衣服褲裙洋裝 clothing；保養彩妝 skincare；牙刷、清潔、居家生活用品 life。
