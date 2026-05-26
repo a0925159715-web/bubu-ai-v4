@@ -1,1 +1,1 @@
-Bubu AI V5 Readable Fixed
+Bubu AI V5 Dual Mode
