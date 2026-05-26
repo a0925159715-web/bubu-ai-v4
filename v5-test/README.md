@@ -1,1 +1,1 @@
-Bubu AI V5 Dual Mode
+Bubu AI V5 Label Cost Fixed
