@@ -26,9 +26,9 @@ module.exports = async function handler(req,res){
 【分類】
 衣服褲裙洋裝 clothing；保養彩妝 skincare；牙刷、清潔、居家生活用品 life。
 
-【中文標籤】
-保養品/彩妝/清潔用品/生活用品：一定要保留中文標籤資訊。衣服可不用。
+【保養品/個人清潔用品中文標籤】
 capacity 抓容量/規格；labelPurpose 用簡短用途；labelExpiry 預設詳見產品外盒；labelCompany 預設布布韓國工作室；labelContact 預設 @bubukorea；labelOrigin 預設韓國。
+若是服飾，中文標籤欄位可以空白。
 
 【保養品安全禁止詞】
 治療、修復、美白、淡斑、抗敏、消炎、殺菌、消毒、抗痘、除皺、病毒、細菌、保證有效、醫美級。
