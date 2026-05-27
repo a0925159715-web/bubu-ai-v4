@@ -9,7 +9,7 @@ module.exports = async function handler(req,res){
 請回傳純 JSON：
 {"productName":"","colors":"","specs":"","sizeText":"","capacity":"","cost":0,"category":"clothing","copy":"","labelPurpose":"","labelExpiry":"詳見產品外盒","labelCompany":"布布韓國工作室","labelContact":"@bubukorea","labelOrigin":"韓國","labelUsage":""}
 
-【商品名稱規則 V6.4】
+【商品名稱規則 V6.5】
 1. productName 必須保留款號/貨號/廠商編號，例如 0234、G060234、K15-0903、6042、6620X、#1860、BQ6468，但不要包含使用者廠商代碼 ${vendorCode||""}。
 2. 如果原文只有數字款號或商品名太短，不能只回傳款號。必須從下方文案抓 1~5 個有銷售力的關鍵字補成完整名稱。
 3. 商品名稱要像台灣韓貨網拍命名，不是工程師資料庫命名。
@@ -28,6 +28,7 @@ module.exports = async function handler(req,res){
 
 【保養品/個人清潔用品中文標籤】
 capacity 抓容量/規格；labelPurpose 用簡短用途；labelExpiry 預設詳見產品外盒；labelCompany 預設布布韓國工作室；labelContact 預設 @bubukorea；labelOrigin 預設韓國。
+若是服飾，中文標籤欄位可以空白。
 
 【保養品安全禁止詞】
 治療、修復、美白、淡斑、抗敏、消炎、殺菌、消毒、抗痘、除皺、病毒、細菌、保證有效、醫美級。
