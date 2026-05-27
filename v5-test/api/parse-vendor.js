@@ -9,7 +9,7 @@ module.exports = async function handler(req,res){
 請回傳純 JSON：
 {"productName":"","colors":"","specs":"","sizeText":"","capacity":"","cost":0,"category":"clothing","copy":"","labelPurpose":"","labelExpiry":"詳見產品外盒","labelCompany":"布布韓國工作室","labelContact":"@bubukorea","labelOrigin":"韓國","labelUsage":""}
 
-【商品名稱規則 V6.2，非常重要】
+【商品名稱規則 V6.3】
 1. productName 必須保留款號/貨號/廠商編號，例如 0234、G060234、K15-0903、6042、6620X、#1860、BQ6468，但不要包含使用者廠商代碼 ${vendorCode||""}。
 2. 如果原文只有數字款號或商品名太短，不能只回傳款號。必須從下方文案抓 1~5 個有銷售力的關鍵字補成完整名稱。
 3. 商品名稱要像台灣韓貨網拍命名，不是工程師資料庫命名。
@@ -31,9 +31,6 @@ productName = "30378 韓國高級感修身小香風短袖上衣"
 原文只有：2658
 下方有：小刺繡、短TEE、薄款、休閒
 productName = "2658 韓系小刺繡薄款休閒短TEE"
-
-原文「G060234 小花蕾絲雪花棉上衣」
-productName = "G060234 小花蕾絲雪花棉上衣"
 
 【成本辨識】
 💰100、$100、NT100、批100、批價100、成本100、拿貨100、COST 100、🅒🅞🅢🅣 100、100S 通常 cost=100。
