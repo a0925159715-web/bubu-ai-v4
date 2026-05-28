@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.5.2.4 自動偵測版</title>
+<title>Bubu AI V6.5.2.5 規格修正版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -167,8 +167,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.5.2.4 自動偵測版</h1>
-    <p>原價 / VIP / VVIP、AI 整理完成後自動偵測市場價格、愛+1 Excel 完整相容匯出。</p>
+    <h1>Bubu AI V6.5.2.5 規格修正版</h1>
+    <p>規格欄不再被誤填特色關鍵字、尺寸文字保留換行、AI 整理完成後自動偵測市場價格。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -392,8 +392,22 @@ async function parseVendor() {
     parsedCategory = data.category || 'clothing';
     set('productName', cleanText(data.productName, 'space'));
     set('colors', cleanText(data.colors || '單一色', 'space'));
-    set('specs', cleanText(data.specs || 'F', 'space'));
-    set('sizeText', cleanText(data.sizeText));
+
+    // V6.5.2.5 防護：清理 specs，如果 AI 又亂填特色關鍵字就改成 F
+    let cleanSpecs = cleanText(data.specs || 'F', 'space');
+    const badWords = /(設計|版型|面料|風格|款式|剪裁|材質|布料|工藝|腰帶|裙襬)/;
+    if (badWords.test(cleanSpecs)) {
+      console.warn('AI 又把特色關鍵字填進 specs，已自動改為 F：', cleanSpecs);
+      cleanSpecs = 'F';
+    }
+    set('specs', cleanSpecs);
+
+    // V6.5.2.5 防護：sizeText 如果被 AI 用分號擠成一行，改回換行
+    let cleanSize = cleanText(data.sizeText);
+    if (cleanSize && !cleanSize.includes('\n') && /[;；]/.test(cleanSize)) {
+      cleanSize = cleanSize.split(/\s*[;；]\s*/).filter(Boolean).join('\n');
+    }
+    set('sizeText', cleanSize);
     set('capacity', cleanText(data.capacity || data.specs || '', 'space'));
     if (parsedCategory === 'skincare') set('skincareCost', data.cost || '');
     else set('clothingCost', data.cost || '');
