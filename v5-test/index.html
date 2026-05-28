@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.5.2.7 成本辨識強化版</title>
+<title>Bubu AI V6.5.3 定價改版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -167,8 +167,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.5.2.7 成本辨識強化版</h1>
-    <p>AI 成本辨識強化（認得 P280、【280】等各種廠商寫法），抓不到成本時橘色提醒不漏單。</p>
+    <h1>Bubu AI V6.5.3 定價改版</h1>
+    <p>定價公式更新：落地成本含出貨包材(+8)，原價/0.78、VIP/0.85、VVIP=VIP−10；韓國模式可填韓幣並自訂匯率自動換算。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -184,6 +184,10 @@
       <option value="taiwan">台灣 / 五分埔 NT成本</option>
       <option value="korea">韓國 / S成本</option>
     </select>
+    <div id="krwRateBox" class="hidden">
+      <label>韓幣匯率（1台幣 = ? 韓幣，可隨地下匯率調整）</label>
+      <input id="krwRate" type="number" value="40" oninput="updateAll()"/>
+    </div>
     <label>商品分類</label>
     <select id="category" onchange="parsedCategory=this.value==='auto'?parsedCategory:this.value;updateAll()">
       <option value="auto">AI自動判斷</option>
@@ -317,16 +321,24 @@ function getCost() {
   return Number(detectCategory() === 'skincare' ? val('skincareCost') : val('clothingCost')) || 0;
 }
 
-// V6.5.2.2.2 修正：VVIP 公式對齊 README → /0.84（原本 index.html 寫成 0.844 是 bug）
+// V6.5.3 定價改版：
+//  - 落地成本 +8（出貨包材）
+//  - 韓國模式：成本欄填韓幣，自動 ÷匯率 換台幣，再 ×1.27
+//  - 原價 /0.78、VIP /0.85、VVIP = VIP - 10
 function calcPrices() {
   const mode = val('mode'), cat = detectCategory(), cost = getCost();
   let landed = 0;
-  if (mode === 'taiwan') landed = cost;
-  else landed = Math.ceil(cost * 1.27);
+  if (mode === 'taiwan') {
+    landed = cost + 8;
+  } else {
+    const rate = Number(val('krwRate')) || 40;   // 韓幣匯率，可調，預設40
+    const ntCost = cost / rate;                   // 韓幣換台幣
+    landed = Math.ceil(ntCost * 1.27) + 8;
+  }
   const base = landed;
   let retail = ceil10((base + 54) / 0.78);
-  let vip    = ceil10((base + 47) / 0.82);
-  let vvip   = ceil10((base + 40) / 0.84);
+  let vip    = ceil10((base + 47) / 0.85);
+  let vvip   = vip - 10;
   const mr = Number(val('manualRetail')) || 0;
   const mv = Number(val('manualVip')) || 0;
   const mw = Number(val('manualVvip')) || 0;
@@ -346,6 +358,9 @@ function switchMode() {
 }
 
 function updateAll() {
+  // 韓國模式才顯示匯率欄
+  const krwBox = get('krwRateBox');
+  if (krwBox) krwBox.classList.toggle('hidden', val('mode') !== 'korea');
   const p = calcPrices();
   // V6.5.2.7：成本為 0 / 空白時顯示橘色提醒（只在已輸入商品名稱時提醒，避免一開始就跳）
   const warnBox = get('costWarning');
