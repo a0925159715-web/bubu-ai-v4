@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.5.2.5 規格修正版</title>
+<title>Bubu AI V6.5.2.6 備註不匯出版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -167,8 +167,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.5.2.5 規格修正版</h1>
-    <p>規格欄不再被誤填特色關鍵字、尺寸文字保留換行、AI 整理完成後自動偵測市場價格。</p>
+    <h1>Bubu AI V6.5.2.6 備註不匯出版</h1>
+    <p>愛+1 Excel 匯出時備註欄留空（避開128字限制），AI 市場價格分析保留在工作台供內部查看。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -658,15 +658,7 @@ function buildAiPlusRows(deadline) {
 
     // 完整文案（內文欄）
     const content = t.fullPost || t.copy || '';
-    // 備註欄：放 AI 市場價格偵測完整結果 + 短備註（如果有）
-    const noteParts = [];
-    if (t.marketAdvice && t.marketAdvice.trim() && t.marketAdvice.indexOf('尚未偵測') === -1) {
-      noteParts.push(t.marketAdvice.trim());
-    }
-    if (t.priceNote && t.priceNote.trim()) {
-      noteParts.push('短備註：' + t.priceNote.trim());
-    }
-    const remark = noteParts.join('\n\n');
+    // V6.5.2.6：備註欄完全不匯出，AI市場價格分析保留在工作台供內部查看
 
     let firstRow = true;
     colorList.forEach(color => {
@@ -689,9 +681,8 @@ function buildAiPlusRows(deadline) {
         // row[14] 庫存：預購不必填，留空
         row[23] = t.vip || '';           // VIP
         row[24] = t.vvip || t.wholesale || ''; // VVIP
-        if (firstRow) {
-          row[32] = remark;              // 備註（含 AI 市場價格偵測）
-        }
+        // V6.5.2.6：備註欄不匯出（愛+1有128字限制，AI市場價格分析保留在工作台內部使用）
+        // row[32] 備註留空
         rows.push(row);
         firstRow = false;
       });
