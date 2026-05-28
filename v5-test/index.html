@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.5.2.6 備註不匯出版</title>
+<title>Bubu AI V6.5.2.7 成本辨識強化版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -167,8 +167,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.5.2.6 備註不匯出版</h1>
-    <p>愛+1 Excel 匯出時備註欄留空（避開128字限制），AI 市場價格分析保留在工作台供內部查看。</p>
+    <h1>Bubu AI V6.5.2.7 成本辨識強化版</h1>
+    <p>AI 成本辨識強化（認得 P280、【280】等各種廠商寫法），抓不到成本時橘色提醒不漏單。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -210,6 +210,7 @@
       <label>保養品拿貨價</label>
       <input id="skincareCost" type="number" oninput="updateAll()"/>
     </div>
+    <div id="costWarning" class="hidden" style="margin-top:8px;padding:10px 12px;background:#7c2d12;border:1px solid #f97316;border-radius:8px;color:#fed7aa;font-size:13px;font-weight:600">⚠️ AI 沒抓到成本，價格無法正確計算，請手動填入上方「成本 / 拿貨價」。</div>
 
     <div id="clothingFields">
       <label>顏色</label>
@@ -346,6 +347,12 @@ function switchMode() {
 
 function updateAll() {
   const p = calcPrices();
+  // V6.5.2.7：成本為 0 / 空白時顯示橘色提醒（只在已輸入商品名稱時提醒，避免一開始就跳）
+  const warnBox = get('costWarning');
+  if (warnBox) {
+    const hasName = !!val('productName');
+    warnBox.classList.toggle('hidden', !(hasName && p.cost <= 0));
+  }
   get('landed').textContent = money(p.landed);
   get('retail').textContent = money(p.retail);
   get('vip').textContent = money(p.vip);
