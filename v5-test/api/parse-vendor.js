@@ -77,7 +77,13 @@ capacity 抓容量/規格；labelPurpose 用簡短用途；labelExpiry 預設詳
 治療、修復、美白、淡斑、抗敏、消炎、殺菌、消毒、抗痘、除皺、病毒、細菌、保證有效、醫美級。
 改用保濕感、水潤感、光澤感、清爽感、舒緩感、柔嫩感、日常保養、自然透亮感。
 
-文案繁體中文，台灣網拍闆娘口吻，不要中國用語，不要提真實廠商名。copy 格式：文案：...\\n\\n提醒：...\\n\\nHashtag：...`;
+文案繁體中文，台灣網拍闆娘口吻，不要中國用語，不要提真實廠商名。
+
+【嚴格禁止 hashtag — 重要】
+copy 內容絕對不可以包含任何 # 開頭的標籤（hashtag），例如 #韓系套裝、#夏日穿搭、#百搭等都絕對禁止。
+copy 結尾也不可以出現「Hashtag：」這幾個字或類似標題。
+copy 格式只能是：文案：...\\n\\n提醒：...
+不要再多任何 Hashtag 段落或標籤行。`;
   const user=`廠商代碼：${vendorCode||""}\n使用者選擇分類：${selectedCategory||"auto"}\n成本模式：${mode||""}\n\n廠商原文：\n${rawText||""}`;
   const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4.1-mini",temperature:0.2,response_format:{type:"json_object"},messages:[{role:"system",content:system},{role:"user",content:user}]})});
   const result=await response.json();
