@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.5.3 定價改版</title>
+<title>Bubu AI V6.5.4 防重複防覆蓋修正</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -167,8 +167,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.5.3 定價改版</h1>
-    <p>定價公式更新：落地成本含出貨包材(+8)，原價/0.78、VIP/0.85、VVIP=VIP−10；韓國模式可填韓幣並自訂匯率自動換算。</p>
+    <h1>Bubu AI V6.5.4 防重複防覆蓋修正</h1>
+    <p>修正「同商品被存兩筆」與「上一個商品被新商品覆蓋」的 bug；整理完成後一律自動加入工作台、同名商品自動更新（不再重複建立）。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -197,7 +197,6 @@
     </select>
     <label>貼上廠商原文</label>
     <textarea id="rawText" class="raw"></textarea>
-    <label><input id="autoAdd" type="checkbox" checked style="width:auto"/> AI整理完成後，自動加入雲端同步工作台</label>
     <button id="parseBtn" class="btn ai" onclick="parseVendor()">✨ AI 自動整理商品</button>
   </div>
 
@@ -321,7 +320,7 @@ function getCost() {
   return Number(detectCategory() === 'skincare' ? val('skincareCost') : val('clothingCost')) || 0;
 }
 
-// V6.5.3 定價改版：
+// V6.5.4 防重複防覆蓋修正：
 //  - 落地成本 +8（出貨包材）
 //  - 韓國模式：成本欄填韓幣，自動 ÷匯率 換台幣，再 ×1.27
 //  - 原價 /0.78、VIP /0.85、VVIP = VIP - 10
@@ -400,6 +399,9 @@ function updateLabelPreview(title) {
 async function parseVendor() {
   const rawText = val('rawText');
   if (!rawText) { alert('請先貼上廠商原文'); return; }
+  // V6.5.4 修 bug：整理新商品前，先清掉「正在編輯」的舊 id，
+  // 避免後續市場價格偵測寫進上一筆，造成上一筆被新商品覆蓋。
+  currentEditingId = null;
   const btn = get('parseBtn');
   btn.disabled = true;
   btn.textContent = 'AI整理中...';
@@ -444,10 +446,9 @@ async function parseVendor() {
     set('priceNote', '');
     get('marketAdvice').textContent = '尚未偵測。';
     updateAll();
-    if (get('autoAdd').checked) {
-      const key = val('vendorCode') + '|' + val('productName') + '|' + getCost();
-      if (key !== lastAutoAddedKey) { await addTask(true); lastAutoAddedKey = key; }
-    }
+    // V6.5.4：整理完成後一律自動加入工作台（拿掉 autoAdd 勾選框依賴）
+    const key = val('vendorCode') + '|' + val('productName') + '|' + getCost();
+    if (key !== lastAutoAddedKey) { await addTask(true); lastAutoAddedKey = key; }
     // V6.5.2.4：AI 整理完成後自動偵測市場價格（不阻塞主流程，失敗也沒關係）
     checkMarketPrice(true).then(() => {
       // 偵測完成後再同步一次工作台，把 marketAdvice / priceNote 寫進去
@@ -478,12 +479,22 @@ async function addTask(silent = false) {
   const p = calcPrices(), vendor = val('vendorCode'), name = val('productName');
   if (!name) { if (!silent) alert('沒有商品名稱'); return; }
   const title = vendor && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : name;
-  if (tasks.some(t => t.title === title && String(t.cost) === String(p.cost) && !t.done)) {
-    const found = tasks.find(t => t.title === title && String(t.cost) === String(p.cost) && !t.done);
-    currentEditingId = found ? found.id : null;
-    if (!silent) alert('工作台已有這件商品，已切到自動更新模式');
+
+  // V6.5.4 防重複：用「商品標題」當唯一識別（不再比對成本，因為AI偶爾抓不一樣會誤判）。
+  // 找到同名商品 → 就更新那一筆，不新增；找不到才新增。徹底杜絕重複與覆蓋別筆的問題。
+  const existing = tasks.find(t => t.title === title);
+  if (existing) {
+    // 手動按「加入工作台」時，跳框確認；自動加入(silent)時，直接更新不打擾
+    if (!silent) {
+      if (!confirm(`工作台已有同名商品「${title}」，要用目前的資料覆蓋舊的嗎？`)) {
+        return;
+      }
+    }
+    currentEditingId = existing.id;
+    await scheduleAutoSync();   // 直接觸發同步把現在欄位寫進那筆
     return;
   }
+
   const item = {
     done: false, title,
     retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
