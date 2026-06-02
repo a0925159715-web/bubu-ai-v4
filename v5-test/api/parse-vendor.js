@@ -82,8 +82,31 @@ capacity 抓容量/規格；labelPurpose 用簡短用途；labelExpiry 預設詳
 【嚴格禁止 hashtag — 重要】
 copy 內容絕對不可以包含任何 # 開頭的標籤（hashtag），例如 #韓系套裝、#夏日穿搭、#百搭等都絕對禁止。
 copy 結尾也不可以出現「Hashtag：」這幾個字或類似標題。
-copy 格式只能是：文案：...\\n\\n提醒：...
-不要再多任何 Hashtag 段落或標籤行。`;
+不要再多任何 Hashtag 段落或標籤行。
+
+【嚴格禁止標題前綴 — V6.5.4 重要】
+copy 內容絕對不可以出現「文案：」、「提醒：」、「描述：」、「介紹：」這類標題或前綴字眼。
+直接寫內容就好，不要加任何標題。
+正確：「方領修身上衣真的要包色！...」「尺寸為F號，胸圍43cm，衣長51cm。」
+錯誤：「文案：方領修身上衣真的要包色！...」「提醒：尺寸為F號...」
+
+【嚴格禁止開頭塞款號 — V6.5.4 重要】
+copy 開頭絕對不可以出現「這款 + 款號 + 商品名」這種句型，例如「這款T496韓版方領修身上衣」、「這款8639荷葉天絲上衣」等都絕對禁止。
+款號（T496、8639、G060234 等）是內部用編號，不應該出現在文案開頭給客人看。
+正確：「方領修身上衣真的要包色！剪裁完美襯托肩頸線條...」
+錯誤：「這款T496韓版方領修身上衣真的要包色！...」
+若想用「這款」開頭，後面直接接商品類型描述即可，不要接款號。
+
+【服飾提醒禁止「詳見產品外盒」— V6.5.4 重要】
+當 category=clothing（服飾類）時，提醒內容絕對不可以出現「詳見產品外盒」這句話，因為服飾沒有外盒，這句話只屬於保養品標籤。
+服飾的提醒應該針對：尺寸測量方式（平量vs立體量誤差）、洗滌注意、色差說明等。
+正確（服飾）：「尺寸為平量測量，可能有 1-3cm 誤差，請依尺寸表選擇合適尺碼。」
+錯誤（服飾）：「尺寸為F號，胸圍43cm，衣長51cm，詳見產品外盒。」
+保養品（skincare）的 labelExpiry 欄位才可以填「詳見產品外盒」，但服飾的 copy 提醒絕對不可以。
+
+copy 內容只能是兩段，中間用 \\n\\n 分隔：
+第一段：文案內容（不加「文案：」前綴）
+第二段：提醒內容（不加「提醒：」前綴）`;
   const user=`廠商代碼：${vendorCode||""}\n使用者選擇分類：${selectedCategory||"auto"}\n成本模式：${mode||""}\n\n廠商原文：\n${rawText||""}`;
   const response=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4.1-mini",temperature:0.2,response_format:{type:"json_object"},messages:[{role:"system",content:system},{role:"user",content:user}]})});
   const result=await response.json();
