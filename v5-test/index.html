@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.5.4 防重複防覆蓋修正</title>
+<title>Bubu AI V6.5.5 毛利可視化</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -107,6 +107,11 @@
   }
   .mini .k { font-size: 11px; color: #94a3b8; }
   .mini .v { font-size: 16px; font-weight: 700; color: #fbbf24; }
+  /* V6.5.5 毛利顯示：綠色>30%、黃色20-30%、紅色<20% */
+  .mini .profit { font-size: 11px; margin-top: 2px; font-weight: 600; }
+  .mini .profit.good { color: #4ade80; }      /* 綠：>30% */
+  .mini .profit.okay { color: #fbbf24; }      /* 黃：20-30% */
+  .mini .profit.bad  { color: #f87171; }      /* 紅：<20% */
   .priceBox {
     background: #0f172a;
     border: 1px solid #334155;
@@ -167,8 +172,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.5.4 防重複防覆蓋修正</h1>
-    <p>修正「同商品被存兩筆」與「上一個商品被新商品覆蓋」的 bug；整理完成後一律自動加入工作台、同名商品自動更新（不再重複建立）。</p>
+    <h1>Bubu AI V6.5.5 毛利可視化</h1>
+    <p>每個價格旁顯示「賺多少 + 毛利%」與紅黃綠提示（&gt;30%綠、20-30%黃、&lt;20%紅），方便手動微調定價時參考。同時保留 V6.5.4 的防重複、防覆蓋修正。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -243,11 +248,11 @@
 
     <div class="priceGrid">
       <div class="mini"><div class="k">落地成本</div><div id="landed" class="v">0</div></div>
-      <div class="mini"><div class="k">原價</div><div id="retail" class="v">0</div></div>
-      <div class="mini"><div class="k">VIP</div><div id="vip" class="v">0</div></div>
+      <div class="mini"><div class="k">原價</div><div id="retail" class="v">0</div><div id="retailProfit" class="profit"></div></div>
+      <div class="mini"><div class="k">VIP</div><div id="vip" class="v">0</div><div id="vipProfit" class="profit"></div></div>
     </div>
     <div class="priceGrid">
-      <div class="mini"><div class="k">VVIP</div><div id="vvip" class="v">0</div></div>
+      <div class="mini"><div class="k">VVIP</div><div id="vvip" class="v">0</div><div id="vvipProfit" class="profit"></div></div>
       <div class="priceBox"><label>手動原價</label><input id="manualRetail" type="number" placeholder="可自行調整" oninput="updateAll()"/></div>
       <div class="priceBox"><label>手動VIP</label><input id="manualVip" type="number" placeholder="可自行調整" oninput="updateAll()"/></div>
     </div>
@@ -320,7 +325,7 @@ function getCost() {
   return Number(detectCategory() === 'skincare' ? val('skincareCost') : val('clothingCost')) || 0;
 }
 
-// V6.5.4 防重複防覆蓋修正：
+// V6.5.5 毛利可視化：
 //  - 落地成本 +8（出貨包材）
 //  - 韓國模式：成本欄填韓幣，自動 ÷匯率 換台幣，再 ×1.27
 //  - 原價 /0.78、VIP /0.85、VVIP = VIP - 10
@@ -371,6 +376,27 @@ function updateAll() {
   get('retail').textContent = money(p.retail);
   get('vip').textContent = money(p.vip);
   get('vvip').textContent = money(p.vvip);
+
+  // V6.5.5 毛利顯示：每級價格底下顯示「賺多少 + 毛利%」+ 紅黃綠顏色
+  // 毛利率 = (售價 − 進價) ÷ 售價（用「未含包材的純進價」當底，最接近真實感受）
+  // 顏色標準：>30% 綠（健康）、20-30% 黃（偏低）、<20% 紅（警戒）
+  function showProfit(boxId, sellPrice) {
+    const box = get(boxId);
+    if (!box) return;
+    const cost = Number(p.cost) || 0;
+    if (cost <= 0 || sellPrice <= 0) { box.textContent = ''; box.className = 'profit'; return; }
+    const profit = sellPrice - cost;
+    const margin = profit / sellPrice * 100;
+    let cls = 'profit ';
+    if (margin >= 30) cls += 'good';
+    else if (margin >= 20) cls += 'okay';
+    else cls += 'bad';
+    box.className = cls;
+    box.textContent = `賺 ${money(profit)} (${margin.toFixed(0)}%)`;
+  }
+  showProfit('retailProfit', p.retail);
+  showProfit('vipProfit', p.vip);
+  showProfit('vvipProfit', p.vvip);
   switchMode();
   const vendor = val('vendorCode'), name = val('productName');
   const title = vendor && name && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : (name || '');
