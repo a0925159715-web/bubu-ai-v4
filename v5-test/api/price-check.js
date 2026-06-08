@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
 {"advice":"完整建議文字","shortNote":"一句可放進備註的短結論"}`;
 
     const ai = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
