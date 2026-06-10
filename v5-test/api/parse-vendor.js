@@ -7,6 +7,70 @@ module.exports = async function handler(req, res) {
 
     const { rawText, vendorCode, selectedCategory, mode } = req.body || {};
 
+    // Bubu AI V6.6：保養品/資料不足時，自動搜尋商品資料
+    // 安全設計：
+    // 1) 沒有 SERPAPI_API_KEY 時，不中斷流程
+    // 2) SerpAPI 失敗/額度不足/Key錯誤時，不中斷流程
+    // 3) 只有疑似保養品/生活用品或原文很短時才搜尋，避免浪費搜尋次數
+    async function searchProductInfo(query, selectedCategory) {
+      const serpKey = process.env.SERPAPI_API_KEY;
+      if (!serpKey || !query) return "";
+
+      const raw = String(query || "").trim();
+      const compact = raw.replace(/\s+/g, "");
+      const lower = raw.toLowerCase();
+
+      const looksLikeSkincare =
+        selectedCategory === "skincare" ||
+        selectedCategory === "life" ||
+        /霜|乳|精華|安瓶|化妝水|防曬|隔離|洗面|潔面|面膜|眼霜|乳液|保養|彩妝|粉底|氣墊|唇|卸妝|面霜|cream|serum|ampoule|toner|sun|sunscreen|cleanser|mask|lotion|essence|eye/.test(lower);
+
+      const isTooShort = compact.length <= 60;
+
+      if (!looksLikeSkincare && !isTooShort) return "";
+
+      try {
+        const cleanQuery = raw.replace(/\s+/g, " ").trim().slice(0, 140);
+        const q = encodeURIComponent(`${cleanQuery} 韓國 商品介紹 使用方法 容量 성분 사용법`);
+        const url = `https://serpapi.com/search.json?engine=google&q=${q}&gl=kr&hl=ko&num=8&api_key=${serpKey}`;
+
+        const r = await fetch(url);
+        const j = await r.json();
+
+        if (!r.ok || j.error) return "";
+
+        const rows = [];
+        const items = [
+          ...(j.organic_results || []),
+          ...(j.shopping_results || [])
+        ].slice(0, 8);
+
+        items.forEach((x, i) => {
+          const title = x.title || "";
+          const snippet = x.snippet || x.description || "";
+          const source = x.source || "";
+          const price = x.price || "";
+          const link = x.link || "";
+          if (title || snippet) {
+            rows.push([
+              `來源${i + 1}`,
+              `標題：${title}`,
+              `摘要：${snippet}`,
+              source ? `來源網站：${source}` : "",
+              price ? `價格：${price}` : "",
+              link ? `連結：${link}` : ""
+            ].filter(Boolean).join("\n"));
+          }
+        });
+
+        return rows.join("\n\n").slice(0, 7000);
+      } catch (e) {
+        return "";
+      }
+    }
+
+    const externalInfo = await searchProductInfo(rawText, selectedCategory);
+
     const system = `你是台灣網拍賣家的廠商原文解析AI。只解析商品資料與生成文案，價格由網站計算。
 
 請回傳純 JSON，不要 markdown，不要解釋：
@@ -63,6 +127,22 @@ capacity 抓容量/規格；labelPurpose 用簡短用途；labelExpiry 預設詳
 禁止：治療、修復、美白、淡斑、抗敏、消炎、殺菌、消毒、抗痘、除皺、病毒、細菌、保證有效、醫美級。
 改用：保濕感、水潤感、光澤感、清爽感、舒緩感、柔嫩感、日常保養、自然透亮感。
 
+【外部搜尋資料規則 V6.6 — 非常重要】
+如果有「外部搜尋摘要」，請優先依照外部搜尋摘要與廠商原文整理，不要只靠商品名稱猜測。
+外部搜尋摘要只能當參考，若搜尋結果看起來不是同一商品，請不要硬套。
+保養品/彩妝/生活用品的文案要有銷售感，但不可誇大功效。
+若廠商原文很少、外部搜尋也沒有明確資料，仍可生成文案，但必須使用安全型描述，不可宣稱功效。
+
+【保養品只有名稱時的安全文案方向】
+可以寫：
+質地感、日常保養、保養步驟、清爽感、滋潤感、柔嫩感、光澤感、妝前使用、日常清潔、依個人膚況搭配使用、依商品標示使用。
+不可把商品名稱裡的字自行延伸成實際功效。
+例如名稱有「修復」，不可寫「修復肌膚屏障」；名稱有「眼袋」，不可寫「改善眼袋」。
+
+【文案長度】
+copy 第一段至少 90～160 字，要像可直接上架的網拍文案，不要太短、不要只寫一句話。
+第二段放提醒，語氣自然，不要像法規聲明。
+
 【文案規則】
 繁體中文，台灣網拍闆娘口吻，不要中國用語，不要提真實廠商名。
 copy 絕對不可包含 hashtag。
@@ -78,7 +158,10 @@ copy 只能兩段，中間用 \\n\\n 分隔：
 成本模式：${mode || ""}
 
 廠商原文：
-${rawText || ""}`;
+${rawText || ""}
+
+外部搜尋摘要（若有，請優先參考；若未取得則忽略）：
+${externalInfo || "未取得外部搜尋資料"}`;
 
     const prompt = `${system}\n\n${user}`;
 
