@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.5.6 韓國韓幣欄位版</title>
+<title>Bubu AI V6.7 48小時自動清理版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -172,8 +172,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.5.6 韓國韓幣欄位版</h1>
-    <p>每個價格旁顯示「賺多少 + 毛利%」與紅黃綠提示（&gt;30%綠、20-30%黃、&lt;20%紅），方便手動微調定價時參考。同時保留 V6.5.4 的防重複、防覆蓋修正。</p>
+    <h1>Bubu AI V6.7 48小時自動清理版</h1>
+    <p>每個價格旁顯示「賺多少 + 毛利%」與紅黃綠提示；已同步商品保留48小時後自動清理，避免工作台越積越亂。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -526,9 +526,32 @@ async function loadTasks() {
   try {
     const { data, error } = await supabaseClient.from('tasks').select('*').order('created_at', { ascending: false });
     if (error) throw error;
-    tasks = (data || []).map(r => ({ id: r.id, ...JSON.parse(r.content) }));
+
+    // V6.7：已同步商品保留48小時後自動刪除
+    // 只有 done=true 才會刪；未同步商品永遠不自動刪。
+    const now = Date.now();
+    const keepRows = [];
+    const deleteIds = [];
+
+    (data || []).forEach(r => {
+      let content = {};
+      try { content = JSON.parse(r.content || '{}'); } catch (e) {}
+
+      const syncedTime = content.syncedAt || r.created_at;
+      const ageMs = syncedTime ? (now - new Date(syncedTime).getTime()) : 0;
+      const shouldDelete = content.done === true && ageMs > 48 * 60 * 60 * 1000;
+
+      if (shouldDelete) deleteIds.push(r.id);
+      else keepRows.push(r);
+    });
+
+    if (deleteIds.length) {
+      await supabaseClient.from('tasks').delete().in('id', deleteIds);
+    }
+
+    tasks = keepRows.map(r => ({ id: r.id, created_at: r.created_at, ...JSON.parse(r.content) }));
     renderTasks();
-    cloud('☁️ 雲端已同步', true);
+    cloud(deleteIds.length ? `☁️ 雲端已同步，已自動清理 ${deleteIds.length} 筆已同步舊資料` : '☁️ 雲端已同步', true);
   } catch (e) {
     cloud('雲端讀取失敗：' + e.message, false);
   }
@@ -574,8 +597,17 @@ async function addTask(silent = false) {
 }
 
 async function toggleTask(i) {
-  const t = tasks[i], u = { ...t, done: !t.done };
+  const t = tasks[i];
+  const newDone = !t.done;
+  const u = { ...t, done: newDone };
+
+  // V6.7：按「已同步」時記錄同步時間，48小時自動清理會以此為基準。
+  if (newDone) u.syncedAt = new Date().toISOString();
+  else delete u.syncedAt;
+
   delete u.id;
+  delete u.created_at;
+
   const { error } = await supabaseClient.from('tasks').update({ content: JSON.stringify(u) }).eq('id', t.id);
   if (error) { alert('更新失敗：' + error.message); return; }
   await loadTasks();
@@ -591,7 +623,7 @@ async function deleteTask(i) {
 function renderTasks() {
   get('taskBody').innerHTML = tasks.map((t, i) => `
     <tr>
-      <td><span class="pill ${t.done ? 'done' : ''}">${t.done ? '✅ 已同步' : '⏳ 未同步'}</span></td>
+      <td><span class="pill ${t.done ? 'done' : ''}">${t.done ? '✅ 已同步' : '⏳ 未同步'}</span>${t.done && t.syncedAt ? `<br><span style="font-size:11px;color:#94a3b8">約${Math.max(0, Math.ceil((48*60*60*1000 - (Date.now()-new Date(t.syncedAt).getTime()))/3600000))}小時後清理</span>` : ''}</td>
       <td>${t.title}<br><span style="font-size:12px;color:#64748b">${t.time || ''}${t.priceNote ? '<br>備註：' + t.priceNote : ''}</span></td>
       <td>${t.retail || ''}</td>
       <td><b>${t.vip || ''}</b></td>
@@ -649,7 +681,7 @@ async function autoSyncCurrentTask() {
   const old = tasks.find(t => t.id === currentEditingId) || {};
   const title = vendor && name && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : name;
   const updated = {
-    ...old, done: old.done || false, title,
+    ...old, done: old.done || false, syncedAt: old.syncedAt || null, title,
     retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
     cost: p.cost, category: p.cat,
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
