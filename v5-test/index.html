@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.8 供應商中心版</title>
+<title>Bubu AI V6.8.1 服飾進貨版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -183,8 +183,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.8 供應商中心版</h1>
-    <p>保留48小時自動清理；新增供應商中心、服飾代碼對照、進貨金額紀錄與 MOMO 低消追蹤。</p>
+    <h1>Bubu AI V6.8.1 服飾進貨版</h1>
+    <p>保留48小時自動清理；新增供應商中心、服飾/保養品進貨金額紀錄與 MOMO 低消追蹤。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -337,9 +337,28 @@
     </div>
 
     <div class="card" style="background:#0f172a">
-      <h2>💰 進貨金額登錄</h2>
+      <h2>💰 進貨金額登錄（保養品＋服飾）</h2>
       <div class="grid2">
-        <div><label>供應商</label><select id="purchaseSupplier"><option value="MOMO">MOMO</option><option value="韓妝批發">韓妝批發</option><option value="東大門美妝">東大門美妝</option><option value="SD批發">SD批發</option><option value="957批發">957批發</option></select></div>
+        <div><label>供應商</label><select id="purchaseSupplier">
+            <option value="MOMO">MOMO</option>
+            <option value="韓妝批發">韓妝批發</option>
+            <option value="東大門美妝">東大門美妝</option>
+            <option value="SD批發">SD批發</option>
+            <option value="957批發">957批發</option>
+            <option value="A米格">A米格</option>
+            <option value="MC COKA">MC COKA</option>
+            <option value="MK smile">MK smile</option>
+            <option value="衣玥">衣玥</option>
+            <option value="APRIL">APRIL</option>
+            <option value="宜琳">宜琳</option>
+            <option value="727">727</option>
+            <option value="米淇">米淇</option>
+            <option value="宜美">宜美</option>
+            <option value="Circle">Circle</option>
+            <option value="H服飾">H服飾</option>
+            <option value="彎彎">彎彎</option>
+            <option value="米亞">米亞</option>
+          </select></div>
         <div><label>日期</label><input id="purchaseDate" type="date"/></div>
         <div><label>金額</label><input id="purchaseAmount" type="number" placeholder="例如 3500"/></div>
       </div>
@@ -981,8 +1000,15 @@ function renderSuppliers() {
 function updatePurchaseSupplierOptions() {
   const el = get('purchaseSupplier');
   if (!el) return;
-  const base = ['MOMO','韓妝批發','東大門美妝','SD批發','957批發'];
-  const fromSuppliers = suppliers.filter(s => s.supplier_type === '保養品').map(s => s.supplier_name).filter(Boolean);
+
+  // V6.8.1：進貨金額不只保養品，服飾供應商也可以登錄。
+  // 供應商下拉會合併「預設清單」＋「suppliers 表裡所有供應商名稱」。
+  const base = [
+    'MOMO','韓妝批發','東大門美妝','SD批發','957批發',
+    'A米格','MC COKA','MK smile','衣玥','APRIL','宜琳','727',
+    '米淇','宜美','Circle','H服飾','彎彎','米亞'
+  ];
+  const fromSuppliers = suppliers.map(s => s.supplier_name).filter(Boolean);
   const names = [...new Set([...base, ...fromSuppliers])];
   const current = el.value;
   el.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
