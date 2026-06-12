@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.8.1 服飾進貨版</title>
+<title>Bubu AI V6.8.4 全年份日期版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -183,7 +183,7 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.8.1 服飾進貨版</h1>
+    <h1>Bubu AI V6.8.4 全年份日期版</h1>
     <p>保留48小時自動清理；新增供應商中心、服飾/保養品進貨金額紀錄與 MOMO 低消追蹤。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -359,7 +359,7 @@
             <option value="彎彎">彎彎</option>
             <option value="米亞">米亞</option>
           </select></div>
-        <div><label>日期</label><input id="purchaseDate" type="date"/></div>
+        <div><label>日期（可填任何日期）</label><input id="purchaseDate" type="text" placeholder="例如 2026-06-09 或 2026-07-15"/></div>
         <div><label>金額</label><input id="purchaseAmount" type="number" placeholder="例如 3500"/></div>
       </div>
       <label>備註</label>
@@ -962,6 +962,15 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function normalizePurchaseDate(v){
+  const raw = String(v || '').trim();
+  if(!raw) return todayISO();
+  const m = raw.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(!m) return null;
+  return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+}
+
+
 function monthStartISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
@@ -1104,7 +1113,9 @@ function renderPurchaseRecords() {
 async function addPurchaseRecord() {
   const supplier_name = val('purchaseSupplier');
   const amount = Number(val('purchaseAmount')) || 0;
-  const purchase_date = val('purchaseDate') || todayISO();
+  const rawDate = val('purchaseDate') || todayISO();
+  const purchase_date = normalizePurchaseDate(rawDate);
+  if (!purchase_date) { alert('日期格式請輸入 2026-06-09 或 2026/06/09'); return; }
   const note = val('purchaseNote');
   if (!supplier_name) { alert('請選擇供應商'); return; }
   if (amount <= 0) { alert('請輸入正確金額'); return; }
