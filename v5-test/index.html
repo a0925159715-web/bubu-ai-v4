@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.9.1 排程穩定版</title>
+<title>Bubu AI V6.9.2 打勾修正版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -192,7 +192,7 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.9.1 排程穩定版</h1>
+    <h1>Bubu AI V6.9.2 打勾修正版</h1>
     <p>保留48小時自動清理；新增今日排程打勾、daily_tasks 紀錄、供應商中心移到底部。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -201,7 +201,7 @@
 
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>📅 今日排程中心 V6.9.1</h2>
+    <h2>📅 今日排程中心 V6.9.2.2</h2>
     <span id="scheduleDateText" class="subtle">排程載入中...</span>
   </div>
   <div id="scheduleBody" class="scheduleGrid"></div>
@@ -982,7 +982,7 @@ function copyLabel() {
 
 
 // ─────────────────────────────
-// V6.9 今日排程中心
+// V6.9.2 今日排程中心：打勾修正版
 // ─────────────────────────────
 const fashionSchedule = {
   '2026-06-15': ['A米格', 'MC COKA'],
@@ -1006,6 +1006,10 @@ const skincareCycle = ['MOMO', 'SD', '957', '東大門', '韓妝'];
 
 function getTodayTaskDate() { return todayISO(); }
 function dateLabel(dateStr) { return String(dateStr || '').replaceAll('-', '/'); }
+
+function safeKey(dateStr, category, taskName) {
+  return btoa(unescape(encodeURIComponent(`${dateStr}||${category}||${taskName}`))).replaceAll('=', '');
+}
 
 function getSkincareForDate(dateStr) {
   const start = new Date('2026-06-15T00:00:00');
@@ -1041,27 +1045,20 @@ function isTaskCompleted(dateStr, category, taskName) {
 }
 
 async function loadDailyTasks() {
-  // V6.9.1：排程先顯示，再讀 daily_tasks。
-  // 就算 daily_tasks 暫時讀不到，今日排程也不能空白。
+  renderTodaySchedule();
   try {
-    renderTodaySchedule();
-
     const { data, error } = await supabaseClient
       .from('daily_tasks')
       .select('*')
       .gte('task_date', monthStartISO())
       .lte('task_date', monthEndISO())
       .order('task_date', { ascending: false });
-
     if (error) throw error;
-
     dailyTasks = data || [];
     renderTodaySchedule();
     renderMonthlyTaskSummary();
   } catch (e) {
     console.error('daily_tasks error:', e);
-    dailyTasks = [];
-    renderTodaySchedule();
     const box = get('monthlyTaskSummary');
     if (box) box.textContent = 'daily_tasks 暫時讀不到，但今日排程仍可查看。';
     cloud('每日排程讀取失敗：' + e.message, false);
@@ -1072,45 +1069,84 @@ function renderTodaySchedule() {
   const body = get('scheduleBody');
   if (!body) return;
   const dateStr = getTodayTaskDate();
-  get('scheduleDateText').textContent = `今日：${dateLabel(dateStr)}`;
+  const dateText = get('scheduleDateText');
+  if (dateText) dateText.textContent = `今日：${dateLabel(dateStr)}`;
+
   const groups = {};
   getScheduleForDate(dateStr).forEach(item => {
     if (!groups[item.category]) groups[item.category] = [];
     groups[item.category].push(item);
   });
+
   body.innerHTML = Object.keys(groups).map(category => `
     <div class="taskGroup">
       <h3>${category}</h3>
       ${groups[category].map(item => {
         const checked = isTaskCompleted(dateStr, item.category, item.task_name);
+        const key = safeKey(dateStr, item.category, item.task_name);
         return `<label class="taskItem">
-          <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleDailyTask('${dateStr}', '${item.category}', '${item.task_name}', this.checked)">
+          <input
+            type="checkbox"
+            class="dailyTaskCheck"
+            id="task_${key}"
+            data-date="${dateStr}"
+            data-category="${item.category}"
+            data-name="${item.task_name}"
+            ${checked ? 'checked' : ''}>
           <span class="${checked ? 'taskDoneText' : ''}">${item.task_name}</span>
         </label>`;
       }).join('')}
     </div>`).join('');
+
+  bindDailyTaskEvents();
+}
+
+function bindDailyTaskEvents() {
+  document.querySelectorAll('.dailyTaskCheck').forEach(el => {
+    el.addEventListener('change', async function() {
+      const dateStr = this.dataset.date;
+      const category = this.dataset.category;
+      const taskName = this.dataset.name;
+      const completed = this.checked;
+      await toggleDailyTask(dateStr, category, taskName, completed);
+    });
+  });
 }
 
 async function toggleDailyTask(dateStr, category, taskName, completed) {
-  const existing = dailyTasks.find(t => t.task_date === dateStr && t.category === category && t.task_name === taskName);
-  if (existing) {
-    const { error } = await supabaseClient.from('daily_tasks').update({
-      completed,
-      completed_at: completed ? new Date().toISOString() : null
-    }).eq('id', existing.id);
-    if (error) { alert('更新排程失敗：' + error.message); return; }
-  } else {
-    const { error } = await supabaseClient.from('daily_tasks').insert({
-      task_date: dateStr,
-      category,
-      task_name: taskName,
-      completed,
-      completed_at: completed ? new Date().toISOString() : null
-    });
-    if (error) { alert('新增排程紀錄失敗：' + error.message); return; }
+  try {
+    cloud(completed ? `儲存中：${taskName}` : `取消中：${taskName}`, true);
+
+    const existing = dailyTasks.find(t =>
+      t.task_date === dateStr &&
+      t.category === category &&
+      t.task_name === taskName
+    );
+
+    if (existing) {
+      const { error } = await supabaseClient.from('daily_tasks').update({
+        completed,
+        completed_at: completed ? new Date().toISOString() : null
+      }).eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient.from('daily_tasks').insert({
+        task_date: dateStr,
+        category,
+        task_name: taskName,
+        completed,
+        completed_at: completed ? new Date().toISOString() : null
+      });
+      if (error) throw error;
+    }
+
+    await loadDailyTasks();
+    cloud(completed ? `✅ 已完成：${taskName}` : `↩️ 已取消：${taskName}`, true);
+  } catch (e) {
+    alert('排程儲存失敗：' + e.message);
+    cloud('排程儲存失敗：' + e.message, false);
+    await loadDailyTasks();
   }
-  await loadDailyTasks();
-  cloud(completed ? `✅ 已完成：${taskName}` : `↩️ 已取消：${taskName}`, true);
 }
 
 function renderMonthlyTaskSummary() {
@@ -1118,13 +1154,18 @@ function renderMonthlyTaskSummary() {
   if (!box) return;
   const completed = dailyTasks.filter(t => t.completed === true);
   if (!completed.length) { box.textContent = '本月尚未完成任何排程項目。'; return; }
+
   const byName = {};
   completed.forEach(t => {
     const key = `${t.category}｜${t.task_name}`;
     byName[key] = (byName[key] || 0) + 1;
   });
-  box.textContent = Object.entries(byName).sort((a,b)=>b[1]-a[1]).map(([k,c]) => `${k}：${c}次`).join('\n');
+  box.textContent = Object.entries(byName)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([k,c]) => `${k}：${c}次`)
+    .join('\n');
 }
+
 
 // ─────────────────────────────
 // V6.8 供應商中心
