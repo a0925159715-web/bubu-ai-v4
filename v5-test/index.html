@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.8.4 全年份日期版</title>
+<title>Bubu AI V6.9 今日排程版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -177,16 +177,41 @@
   .progressBar { height:100%; width:0%; background:linear-gradient(90deg,#22c55e,#fbbf24); }
   .miniTable th, .miniTable td { font-size:12px; }
 
+
+  .scheduleGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:10px; }
+  .taskGroup { background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; }
+  .taskGroup h3 { margin:0 0 8px; font-size:15px; color:#fbbf24; }
+  .taskItem { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px dashed #334155; color:#e2e8f0; font-size:14px; }
+  .taskItem:last-child { border-bottom:none; }
+  .taskItem input { width:auto; transform:scale(1.15); }
+  .taskDoneText { color:#94a3b8; text-decoration:line-through; }
+  .monthlyReview { margin-top:12px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.8.4 全年份日期版</h1>
-    <p>保留48小時自動清理；新增供應商中心、服飾/保養品進貨金額紀錄與 MOMO 低消追蹤。</p>
+    <h1>Bubu AI V6.9 今日排程版</h1>
+    <p>保留48小時自動清理；新增今日排程打勾、daily_tasks 紀錄、供應商中心移到底部。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
+</div>
+
+
+<div class="card" style="margin-top:16px">
+  <div class="sectionTitle">
+    <h2>📅 今日排程中心 V6.9</h2>
+    <span id="scheduleDateText" class="subtle">排程載入中...</span>
+  </div>
+  <div id="scheduleBody" class="scheduleGrid"></div>
+  <div class="monthlyReview">
+    <div class="sectionTitle">
+      <h2 style="margin:0">📊 本月完成紀錄</h2>
+      <span class="subtle">依 daily_tasks 自動統計</span>
+    </div>
+    <div id="monthlyTaskSummary" class="preview" style="min-height:50px;margin-top:10px">尚未載入。</div>
+  </div>
 </div>
 
 <div class="grid">
@@ -297,9 +322,24 @@
 
 
 <div class="card" style="margin-top:16px">
+  <h2>⑥ 雲端同步工作台</h2>
+  <div class="toolbar">
+    <button class="btn small purple" onclick="exportAiPlusExcel()">📤 匯出愛+1 Excel</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr><th>狀態</th><th>商品</th><th>原價</th><th>VIP</th><th>VVIP</th><th>成本</th><th>動作</th></tr>
+      </thead>
+      <tbody id="taskBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>⑤ 供應商中心 V6.8</h2>
-    <span class="subtle">服飾代碼對照＋保養品進貨紀錄＋MOMO低消追蹤</span>
+    <h2>⑤ 供應商中心 V6.8（設定區）</h2>
+    <span class="subtle">低頻設定區：供應商代碼、進貨紀錄、MOMO低消追蹤</span>
   </div>
 
   <div class="statGrid">
@@ -372,21 +412,6 @@
   </div>
 </div>
 
-<div class="card" style="margin-top:16px">
-  <h2>⑥ 雲端同步工作台</h2>
-  <div class="toolbar">
-    <button class="btn small purple" onclick="exportAiPlusExcel()">📤 匯出愛+1 Excel</button>
-  </div>
-  <div style="overflow-x:auto">
-    <table>
-      <thead>
-        <tr><th>狀態</th><th>商品</th><th>原價</th><th>VIP</th><th>VVIP</th><th>成本</th><th>動作</th></tr>
-      </thead>
-      <tbody id="taskBody"></tbody>
-    </table>
-  </div>
-</div>
-
 <script>
 const SUPABASE_URL = 'https://xkjayekdbezakvnyjvwu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_6arvG__i8D6QAuP3MgV_7A_cmjmxzg_';
@@ -395,6 +420,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentCopy = '', parsedCategory = 'clothing', lastAutoAddedKey = '';
 let tasks = [], currentEditingId = null, autoSaveTimer = null;
 let suppliers = [], purchaseRecords = [];
+let dailyTasks = [];
 
 const get = id => document.getElementById(id);
 const val = id => get(id).value.trim();
@@ -954,6 +980,141 @@ function copyLabel() {
 }
 
 
+
+// ─────────────────────────────
+// V6.9 今日排程中心
+// ─────────────────────────────
+const fashionSchedule = {
+  '2026-06-15': ['A米格', 'MC COKA'],
+  '2026-06-16': ['MK smile', '米淇'],
+  '2026-06-17': ['衣玥', 'APRIL'],
+  '2026-06-18': ['宜琳', '727'],
+  '2026-06-19': ['Circle', '宜美'],
+  '2026-06-20': ['A米格', '彎彎'],
+  '2026-06-21': ['MC COKA', 'H服飾'],
+  '2026-06-22': ['米亞', 'MK smile'],
+  '2026-06-23': ['APRIL', '衣玥'],
+  '2026-06-24': ['727', '米淇'],
+  '2026-06-25': ['A米格', '宜美'],
+  '2026-06-26': ['Circle', 'MC COKA'],
+  '2026-06-27': ['MK smile', '彎彎'],
+  '2026-06-28': ['H服飾', '宜琳'],
+  '2026-06-29': ['米亞', 'APRIL'],
+  '2026-06-30': ['A米格', '衣玥']
+};
+const skincareCycle = ['MOMO', 'SD', '957', '東大門', '韓妝'];
+
+function getTodayTaskDate() { return todayISO(); }
+function dateLabel(dateStr) { return String(dateStr || '').replaceAll('-', '/'); }
+
+function getSkincareForDate(dateStr) {
+  const start = new Date('2026-06-15T00:00:00');
+  const cur = new Date(dateStr + 'T00:00:00');
+  const diff = Math.floor((cur - start) / (24 * 60 * 60 * 1000));
+  const index = ((diff % skincareCycle.length) + skincareCycle.length) % skincareCycle.length;
+  return skincareCycle[index];
+}
+
+function fallbackFashionForDate(dateStr) {
+  const all = ['A米格','MC COKA','MK smile','米淇','衣玥','APRIL','宜琳','727','Circle','宜美','彎彎','H服飾','米亞'];
+  const start = new Date('2026-06-15T00:00:00');
+  const cur = new Date(dateStr + 'T00:00:00');
+  const diff = Math.max(0, Math.floor((cur - start) / (24 * 60 * 60 * 1000)));
+  return [all[(diff * 2) % all.length], all[(diff * 2 + 1) % all.length]];
+}
+
+function getScheduleForDate(dateStr) {
+  const fashion = fashionSchedule[dateStr] || fallbackFashionForDate(dateStr);
+  const items = [
+    { category: '服飾', task_name: fashion[0] },
+    { category: '服飾', task_name: fashion[1] },
+    { category: '保養品巡查', task_name: getSkincareForDate(dateStr) },
+    { category: '每日必做', task_name: '回客人' }
+  ];
+  const day = new Date(dateStr + 'T00:00:00').getDay();
+  if (day >= 1 && day <= 3) items.push({ category: '每日必做', task_name: '出貨' });
+  return items;
+}
+
+function isTaskCompleted(dateStr, category, taskName) {
+  return dailyTasks.some(t => t.task_date === dateStr && t.category === category && t.task_name === taskName && t.completed === true);
+}
+
+async function loadDailyTasks() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('daily_tasks')
+      .select('*')
+      .gte('task_date', monthStartISO())
+      .lte('task_date', monthEndISO())
+      .order('task_date', { ascending: false });
+    if (error) throw error;
+    dailyTasks = data || [];
+    renderTodaySchedule();
+    renderMonthlyTaskSummary();
+  } catch (e) {
+    cloud('每日排程讀取失敗：' + e.message, false);
+  }
+}
+
+function renderTodaySchedule() {
+  const body = get('scheduleBody');
+  if (!body) return;
+  const dateStr = getTodayTaskDate();
+  get('scheduleDateText').textContent = `今日：${dateLabel(dateStr)}`;
+  const groups = {};
+  getScheduleForDate(dateStr).forEach(item => {
+    if (!groups[item.category]) groups[item.category] = [];
+    groups[item.category].push(item);
+  });
+  body.innerHTML = Object.keys(groups).map(category => `
+    <div class="taskGroup">
+      <h3>${category}</h3>
+      ${groups[category].map(item => {
+        const checked = isTaskCompleted(dateStr, item.category, item.task_name);
+        return `<label class="taskItem">
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleDailyTask('${dateStr}', '${item.category}', '${item.task_name}', this.checked)">
+          <span class="${checked ? 'taskDoneText' : ''}">${item.task_name}</span>
+        </label>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+async function toggleDailyTask(dateStr, category, taskName, completed) {
+  const existing = dailyTasks.find(t => t.task_date === dateStr && t.category === category && t.task_name === taskName);
+  if (existing) {
+    const { error } = await supabaseClient.from('daily_tasks').update({
+      completed,
+      completed_at: completed ? new Date().toISOString() : null
+    }).eq('id', existing.id);
+    if (error) { alert('更新排程失敗：' + error.message); return; }
+  } else {
+    const { error } = await supabaseClient.from('daily_tasks').insert({
+      task_date: dateStr,
+      category,
+      task_name: taskName,
+      completed,
+      completed_at: completed ? new Date().toISOString() : null
+    });
+    if (error) { alert('新增排程紀錄失敗：' + error.message); return; }
+  }
+  await loadDailyTasks();
+  cloud(completed ? `✅ 已完成：${taskName}` : `↩️ 已取消：${taskName}`, true);
+}
+
+function renderMonthlyTaskSummary() {
+  const box = get('monthlyTaskSummary');
+  if (!box) return;
+  const completed = dailyTasks.filter(t => t.completed === true);
+  if (!completed.length) { box.textContent = '本月尚未完成任何排程項目。'; return; }
+  const byName = {};
+  completed.forEach(t => {
+    const key = `${t.category}｜${t.task_name}`;
+    byName[key] = (byName[key] || 0) + 1;
+  });
+  box.textContent = Object.entries(byName).sort((a,b)=>b[1]-a[1]).map(([k,c]) => `${k}：${c}次`).join('\n');
+}
+
 // ─────────────────────────────
 // V6.8 供應商中心
 // ─────────────────────────────
@@ -1147,6 +1308,7 @@ supabaseClient
 loadTasks();
 loadSuppliers();
 loadPurchaseRecords();
+loadDailyTasks();
 if (get('purchaseDate')) get('purchaseDate').value = todayISO();
 updateAll();
 </script>
