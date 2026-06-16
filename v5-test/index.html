@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.9.3 免錯誤查詢版</title>
+<title>Bubu AI V7.0 免錯誤查詢版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -192,7 +192,7 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.9.3 免錯誤查詢版</h1>
+    <h1>Bubu AI V7.0 免錯誤查詢版</h1>
     <p>保留48小時自動清理；新增今日排程打勾、daily_tasks 紀錄、供應商中心移到底部。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -201,13 +201,13 @@
 
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>📅 今日排程中心 V6.9.3.2</h2>
+    <h2>📅 今日排程中心 V7.0.2</h2>
     <span id="scheduleDateText" class="subtle">排程載入中...</span>
   </div>
   <div id="scheduleBody" class="scheduleGrid"></div>
   <div class="monthlyReview">
     <div class="sectionTitle">
-      <h2 style="margin:0">📊 本月完成紀錄</h2>
+      <h2 style="margin:0">📊 營運成績單</h2>
       <span class="subtle">依 daily_tasks 自動統計</span>
     </div>
     <div id="monthlyTaskSummary" class="preview" style="min-height:50px;margin-top:10px">尚未完成任何項目。</div>
@@ -982,7 +982,7 @@ function copyLabel() {
 
 
 // ─────────────────────────────
-// V6.9.2 今日排程中心：打勾修正版
+// V7.0 今日排程中心：打勾修正版
 // ─────────────────────────────
 const fashionSchedule = {
   '2026-06-15': ['A米格', 'MC COKA'],
@@ -1045,7 +1045,7 @@ function isTaskCompleted(dateStr, category, taskName) {
 }
 
 async function loadDailyTasks() {
-  // V6.9.3：最穩版本。
+  // V7.0：最穩版本。
   // 不用 gte/lte/order 查詢，避免 Supabase 對新表回 400。
   // 先全部讀取，再在前端自己篩本月資料。
   renderTodaySchedule();
