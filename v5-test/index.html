@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V6.9.2 打勾修正版</title>
+<title>Bubu AI V6.9.3 免錯誤查詢版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -192,7 +192,7 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V6.9.2 打勾修正版</h1>
+    <h1>Bubu AI V6.9.3 免錯誤查詢版</h1>
     <p>保留48小時自動清理；新增今日排程打勾、daily_tasks 紀錄、供應商中心移到底部。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -201,7 +201,7 @@
 
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>📅 今日排程中心 V6.9.2.2</h2>
+    <h2>📅 今日排程中心 V6.9.3.2</h2>
     <span id="scheduleDateText" class="subtle">排程載入中...</span>
   </div>
   <div id="scheduleBody" class="scheduleGrid"></div>
@@ -1045,23 +1045,33 @@ function isTaskCompleted(dateStr, category, taskName) {
 }
 
 async function loadDailyTasks() {
+  // V6.9.3：最穩版本。
+  // 不用 gte/lte/order 查詢，避免 Supabase 對新表回 400。
+  // 先全部讀取，再在前端自己篩本月資料。
   renderTodaySchedule();
+
   try {
     const { data, error } = await supabaseClient
       .from('daily_tasks')
-      .select('*')
-      .gte('task_date', monthStartISO())
-      .lte('task_date', monthEndISO())
-      .order('task_date', { ascending: false });
+      .select('*');
+
     if (error) throw error;
-    dailyTasks = data || [];
+
+    const start = monthStartISO();
+    const end = monthEndISO();
+
+    dailyTasks = (data || []).filter(t => {
+      const d = String(t.task_date || '').slice(0, 10);
+      return d >= start && d <= end;
+    });
+
     renderTodaySchedule();
     renderMonthlyTaskSummary();
   } catch (e) {
     console.error('daily_tasks error:', e);
     const box = get('monthlyTaskSummary');
-    if (box) box.textContent = 'daily_tasks 暫時讀不到，但今日排程仍可查看。';
-    cloud('每日排程讀取失敗：' + e.message, false);
+    if (box) box.textContent = 'daily_tasks 讀取失敗，請確認欄位名稱是否正確。';
+    cloud('每日排程讀取失敗：' + (e.message || '未知錯誤'), false);
   }
 }
 
@@ -1143,7 +1153,7 @@ async function toggleDailyTask(dateStr, category, taskName, completed) {
     await loadDailyTasks();
     cloud(completed ? `✅ 已完成：${taskName}` : `↩️ 已取消：${taskName}`, true);
   } catch (e) {
-    alert('排程儲存失敗：' + e.message);
+    alert('排程儲存失敗：' + (e.message || JSON.stringify(e)));
     cloud('排程儲存失敗：' + e.message, false);
     await loadDailyTasks();
   }
