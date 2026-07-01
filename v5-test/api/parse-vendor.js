@@ -1,17 +1,72 @@
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function safeParseJson(text) {
+  try { return JSON.parse(text); } catch (e) {}
+  const start = String(text || "").indexOf("{");
+  const end = String(text || "").lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    try { return JSON.parse(String(text).slice(start, end + 1)); } catch (e) {}
+  }
+  return null;
+}
+
+async function callOpenAI({ prompt, json = false, temperature = 0.2, retries = 1 }) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
+
+  let lastError = null;
+
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const body = {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: json ? "請嚴格輸出 JSON，不要 markdown。" : "請使用繁體中文，給台灣網拍賣家可用的專業建議。" },
+          { role: "user", content: prompt }
+        ],
+        temperature
+      };
+      if (json) body.response_format = { type: "json_object" };
+
+      const r = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+
+      const out = await r.json();
+      if (!r.ok) throw new Error(out.error?.message || `OpenAI API error ${r.status}`);
+
+      const text = out.choices?.[0]?.message?.content || (json ? "{}" : "");
+      if (!json) return text || "AI未回傳內容。";
+
+      const parsed = safeParseJson(text);
+      if (!parsed) throw new Error("OpenAI did not return valid JSON");
+      return parsed;
+    } catch (e) {
+      lastError = e;
+      if (i < retries) await sleep(2500);
+    }
+  }
+
+  throw lastError;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY is not set" });
+    if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: "OPENAI_API_KEY is not set" });
 
     const { rawText, vendorCode, selectedCategory, mode } = req.body || {};
+    if (!rawText) return res.status(400).json({ error: "缺少廠商原文" });
 
-    // Bubu AI V6.6：保養品/資料不足時，自動搜尋商品資料
-    // 安全設計：
-    // 1) 沒有 SERPAPI_API_KEY 時，不中斷流程
-    // 2) SerpAPI 失敗/額度不足/Key錯誤時，不中斷流程
-    // 3) 只有疑似保養品/生活用品或原文很短時才搜尋，避免浪費搜尋次數
     async function searchProductInfo(query, selectedCategory) {
       const serpKey = process.env.SERPAPI_API_KEY;
       if (!serpKey || !query) return "";
@@ -26,25 +81,18 @@ module.exports = async function handler(req, res) {
         /霜|乳|精華|安瓶|化妝水|防曬|隔離|洗面|潔面|面膜|眼霜|乳液|保養|彩妝|粉底|氣墊|唇|卸妝|面霜|cream|serum|ampoule|toner|sun|sunscreen|cleanser|mask|lotion|essence|eye/.test(lower);
 
       const isTooShort = compact.length <= 60;
-
       if (!looksLikeSkincare && !isTooShort) return "";
 
       try {
         const cleanQuery = raw.replace(/\s+/g, " ").trim().slice(0, 140);
         const q = encodeURIComponent(`${cleanQuery} 韓國 商品介紹 使用方法 容量 성분 사용법`);
         const url = `https://serpapi.com/search.json?engine=google&q=${q}&gl=kr&hl=ko&num=8&api_key=${serpKey}`;
-
         const r = await fetch(url);
         const j = await r.json();
-
         if (!r.ok || j.error) return "";
 
         const rows = [];
-        const items = [
-          ...(j.organic_results || []),
-          ...(j.shopping_results || [])
-        ].slice(0, 8);
-
+        const items = [...(j.organic_results || []), ...(j.shopping_results || [])].slice(0, 8);
         items.forEach((x, i) => {
           const title = x.title || "";
           const snippet = x.snippet || x.description || "";
@@ -62,7 +110,6 @@ module.exports = async function handler(req, res) {
             ].filter(Boolean).join("\n"));
           }
         });
-
         return rows.join("\n\n").slice(0, 7000);
       } catch (e) {
         return "";
@@ -71,7 +118,7 @@ module.exports = async function handler(req, res) {
 
     const externalInfo = await searchProductInfo(rawText, selectedCategory);
 
-    const system = `你是台灣網拍賣家的廠商原文解析AI。只解析商品資料與生成文案，價格由網站計算。
+    const prompt = `你是台灣網拍賣家的廠商原文解析AI。只解析商品資料與生成文案，價格由網站計算。
 
 請回傳純 JSON，不要 markdown，不要解釋：
 {
@@ -99,111 +146,66 @@ module.exports = async function handler(req, res) {
 5. 必須保留商品類型字：TEE、T、上衣、襯衫、背心、短褲、長褲、寬褲、牛仔褲、洋裝、套裝、外套、裙。
 
 【specs 規則】
-specs 只能放尺寸代號，不可放商品特色。
-正確："S號, M號, L號, XL號"、"F"、"均碼"。
-若沒有尺寸，服飾填 "F"；保養品/生活用品可留空。
+specs 只能放尺寸代號，不可放商品特色。若沒有尺寸，服飾填 "F"；保養品/生活用品可留空。
 
 【sizeText 規則】
-多尺碼必須每個尺碼一行，用 \\n 換行。
-不可用分號或頓號擠成一行。
-若原文有尺寸表，完整保留。
+多尺碼必須每個尺碼一行，用 \\n 換行。若原文有尺寸表，完整保留。
 
 【成本 cost 規則】
 找進貨成本/拿貨價：
 P280、P=280、C280、B280、S280、W280、NT280、$280 → cost=280
 【280】、（280）、[280]、批280、進價280、拿貨280、成本280 → cost=280
 售價、零售價、建議售價、定價、賣價 → 不是 cost。
-若只有一個數字且非售價，優先視為 cost。
-找不到填 0。
+若只有一個數字且非售價，優先視為 cost。找不到填 0。
 
 【分類】
 衣服褲裙洋裝 clothing；保養彩妝 skincare；牙刷、清潔、居家生活用品 life。
-
-【保養品/個人清潔用品中文標籤】
-capacity 抓容量/規格；labelPurpose 用簡短用途；labelExpiry 預設詳見產品外盒；labelCompany 預設布布韓國工作室；labelContact 預設 @bubukorea；labelOrigin 預設韓國。
-若是服飾，中文標籤欄位可以空白。
 
 【保養品安全禁止詞】
 禁止：治療、修復、美白、淡斑、抗敏、消炎、殺菌、消毒、抗痘、除皺、病毒、細菌、保證有效、醫美級。
 改用：保濕感、水潤感、光澤感、清爽感、舒緩感、柔嫩感、日常保養、自然透亮感。
 
-【外部搜尋資料規則 V6.6 — 非常重要】
-如果有「外部搜尋摘要」，請優先依照外部搜尋摘要與廠商原文整理，不要只靠商品名稱猜測。
-外部搜尋摘要只能當參考，若搜尋結果看起來不是同一商品，請不要硬套。
-保養品/彩妝/生活用品的文案要有銷售感，但不可誇大功效。
-若廠商原文很少、外部搜尋也沒有明確資料，仍可生成文案，但必須使用安全型描述，不可宣稱功效。
-
-【保養品只有名稱時的安全文案方向】
-可以寫：
-質地感、日常保養、保養步驟、清爽感、滋潤感、柔嫩感、光澤感、妝前使用、日常清潔、依個人膚況搭配使用、依商品標示使用。
-不可把商品名稱裡的字自行延伸成實際功效。
-例如名稱有「修復」，不可寫「修復肌膚屏障」；名稱有「眼袋」，不可寫「改善眼袋」。
-
-【文案長度】
-copy 第一段至少 90～160 字，要像可直接上架的網拍文案，不要太短、不要只寫一句話。
-第二段放提醒，語氣自然，不要像法規聲明。
+【外部搜尋資料規則】
+如果有外部搜尋摘要，優先依照外部搜尋摘要與廠商原文整理；若搜尋結果不是同一商品，不要硬套。
 
 【文案規則】
 繁體中文，台灣網拍闆娘口吻，不要中國用語，不要提真實廠商名。
+copy 第一段至少 90～160 字，第二段放提醒。
 copy 絕對不可包含 hashtag。
 copy 不可出現「文案：」「提醒：」「描述：」「介紹：」。
 copy 開頭不可出現「這款 + 款號 + 商品名」。
 服飾 copy 不可出現「詳見產品外盒」。
-copy 只能兩段，中間用 \\n\\n 分隔：
-第一段：商品文案。
-第二段：提醒內容。`;
+copy 只能兩段，中間用 \\n\\n 分隔。
 
-    const user = `廠商代碼：${vendorCode || ""}
+廠商代碼：${vendorCode || ""}
 使用者選擇分類：${selectedCategory || "auto"}
 成本模式：${mode || ""}
 
 廠商原文：
 ${rawText || ""}
 
-外部搜尋摘要（若有，請優先參考；若未取得則忽略）：
+外部搜尋摘要：
 ${externalInfo || "未取得外部搜尋資料"}`;
 
-    const prompt = `${system}\n\n${user}`;
+    const parsed = await callOpenAI({ prompt, json: true, temperature: 0.25, retries: 1 });
 
-    const geminiResp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.2,
-            response_mime_type: "application/json"
-          }
-        })
-      }
-    );
-
-    const result = await geminiResp.json();
-
-    if (!geminiResp.ok) {
-      return res.status(geminiResp.status).json({
-        error: result.error?.message || "Gemini API error"
-      });
-    }
-
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch (e) {
-      const start = text.indexOf("{");
-      const end = text.lastIndexOf("}");
-      if (start !== -1 && end !== -1 && end > start) {
-        parsed = JSON.parse(text.slice(start, end + 1));
-      } else {
-        throw new Error("Gemini did not return valid JSON");
-      }
-    }
-
-    return res.status(200).json(parsed);
+    return res.status(200).json({
+      productName: parsed.productName || "",
+      colors: parsed.colors || "",
+      specs: parsed.specs || "",
+      sizeText: parsed.sizeText || "",
+      capacity: parsed.capacity || "",
+      cost: Number(parsed.cost) || 0,
+      category: parsed.category || "clothing",
+      copy: parsed.copy || "",
+      labelPurpose: parsed.labelPurpose || "",
+      labelExpiry: parsed.labelExpiry || "詳見產品外盒",
+      labelCompany: parsed.labelCompany || "布布韓國工作室",
+      labelContact: parsed.labelContact || "@bubukorea",
+      labelOrigin: parsed.labelOrigin || "韓國",
+      labelUsage: parsed.labelUsage || ""
+    });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message || "OpenAI API error" });
   }
 };
