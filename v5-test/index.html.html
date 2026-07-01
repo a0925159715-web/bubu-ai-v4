@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Bubu AI V7.2.2 月份留底版</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 0 0 12px; color: #93c5fd; }
+  .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+    background: #1e293b;
+    border-radius: 12px;
+  }
+  .topbar p { margin: 4px 0 0; font-size: 13px; color: #94a3b8; }
+  .cloud {
+    background: #0e7490;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .cloud.bad { background: #b91c1c; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: #1e293b;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #334155;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: #cbd5e1;
+    margin: 10px 0 4px;
+  }
+  input, select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  textarea.raw { min-height: 180px; }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+  .btn {
+    display: inline-block;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.ai { background: linear-gradient(135deg, #8b5cf6, #ec4899); width: 100%; }
+  .btn.gray { background: #475569; }
+  .btn.red { background: #dc2626; }
+  .btn.teal { background: #0d9488; }
+  .btn.purple { background: #7c3aed; }
+  .btn.small { padding: 6px 10px; font-size: 12px; margin-top: 0; }
+  .priceGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .mini {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+  }
+  .mini .k { font-size: 11px; color: #94a3b8; }
+  .mini .v { font-size: 16px; font-weight: 700; color: #fbbf24; }
+  /* V6.5.5 毛利顯示：綠色>30%、黃色20-30%、紅色<20% */
+  .mini .profit { font-size: 11px; margin-top: 2px; font-weight: 600; }
+  .mini .profit.good { color: #4ade80; }      /* 綠：>30% */
+  .mini .profit.okay { color: #fbbf24; }      /* 黃：20-30% */
+  .mini .profit.bad  { color: #f87171; }      /* 紅：<20% */
+  .priceBox {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px;
+  }
+  .priceBox.market { display: flex; align-items: flex-end; }
+  .grid2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .preview {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    white-space: pre-wrap;
+    font-size: 14px;
+    margin-top: 8px;
+    min-height: 80px;
+    color: #cbd5e1;
+  }
+  .preview.market { background: #1e3a5f; }
+  .hidden { display: none !important; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th, td {
+    padding: 8px 6px;
+    text-align: left;
+    border-bottom: 1px solid #334155;
+    vertical-align: top;
+  }
+  th { background: #0f172a; color: #94a3b8; font-weight: 600; }
+  .pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #f59e0b;
+    color: #1e293b;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pill.done { background: #10b981; color: #fff; }
+
+  .sectionTitle { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .subtle { color:#94a3b8; font-size:12px; }
+  .statGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:10px 0 14px; }
+  .statBox { background:#0f172a; border:1px solid #334155; border-radius:10px; padding:10px; }
+  .statBox .label { font-size:12px;color:#94a3b8; }
+  .statBox .num { font-size:20px;font-weight:800;color:#fbbf24;margin-top:4px; }
+  .progressWrap { height:12px; background:#0f172a; border:1px solid #334155; border-radius:999px; overflow:hidden; margin-top:8px; }
+  .progressBar { height:100%; width:0%; background:linear-gradient(90deg,#22c55e,#fbbf24); }
+  .miniTable th, .miniTable td { font-size:12px; }
+
+
+  .scheduleGrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-top:10px; }
+  .taskGroup { background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; }
+  .taskGroup h3 { margin:0 0 8px; font-size:15px; color:#fbbf24; }
+  .taskItem { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px dashed #334155; color:#e2e8f0; font-size:14px; }
+  .taskItem:last-child { border-bottom:none; }
+  .taskItem input { width:auto; transform:scale(1.15); }
+  .taskDoneText { color:#94a3b8; text-decoration:line-through; }
+  .monthlyReview { margin-top:12px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Bubu AI V7.2.2 月份留底版</h1>
+    <p>保留24小時自動清理；新增今日排程、營運成績單、訂貨金額獨立統計。</p>
+  </div>
+  <span id="cloudStatus" class="cloud">雲端連線中...</span>
+</div>
+
+
+<div class="card" style="margin-top:16px">
+  <div class="sectionTitle">
+    <h2>📅 今日排程中心 V7.2.1</h2>
+    <span id="scheduleDateText" class="subtle">排程載入中...</span>
+  </div>
+  <div id="scheduleBody" class="scheduleGrid"></div>
+  <div class="monthlyReview">
+    <div class="sectionTitle">
+      <h2 style="margin:0">📊 營運成績單</h2>
+      <span class="subtle">依 daily_tasks 自動統計</span>
+    </div>
+    <div id="monthlyTaskSummary" class="preview" style="min-height:50px;margin-top:10px">尚未完成任何項目。</div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <div class="card">
+    <h2>① 廠商原文</h2>
+    <label>廠商代碼</label>
+    <input id="vendorCode" value="BY"/>
+    <label>成本模式</label>
+    <select id="mode" onchange="updateAll()">
+      <option value="taiwan">台灣 / 五分埔 NT成本</option>
+      <option value="korea">韓國 / S成本</option>
+    </select>
+    <div id="krwRateBox" class="hidden">
+      <label>韓幣匯率（1台幣 = ? 韓幣，可隨地下匯率調整）</label>
+      <input id="krwRate" type="number" value="40" oninput="updateAll()"/>
+    </div>
+    <div id="krwPriceBox" class="hidden">
+      <label>韓幣價格（手動輸入）</label>
+      <input id="krwPrice" type="number" placeholder="例如 12400" oninput="updateAll()"/>
+    </div>
+    <label>商品分類</label>
+    <select id="category" onchange="parsedCategory=this.value==='auto'?parsedCategory:this.value;updateAll()">
+      <option value="auto">AI自動判斷</option>
+      <option value="clothing">服飾</option>
+      <option value="skincare">保養品 / 彩妝</option>
+      <option value="life">生活用品</option>
+    </select>
+    <label>貼上廠商原文</label>
+    <textarea id="rawText" class="raw"></textarea>
+    <button id="parseBtn" class="btn ai" onclick="parseVendor()">✨ AI 自動整理商品</button>
+  </div>
+
+  <div class="card">
+    <h2>② AI解析結果 / 可微調</h2>
+    <label>商品名稱</label>
+    <input id="productName" oninput="updateAll()"/>
+
+    <div id="clothingCostBox">
+      <label>服飾成本 / 拿貨價</label>
+      <input id="clothingCost" type="number" oninput="updateAll()"/>
+    </div>
+    <div id="skincareCostBox" class="hidden">
+      <label>保養品拿貨價</label>
+      <input id="skincareCost" type="number" oninput="updateAll()"/>
+    </div>
+    <div id="krwConvertedBox" class="hidden" style="margin-top:8px;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#cbd5e1;font-size:13px">
+      韓幣換算台幣成本：<b id="krwConvertedCost" style="color:#fbbf24">NT$0</b>
+    </div>
+    <div id="costWarning" class="hidden" style="margin-top:8px;padding:10px 12px;background:#7c2d12;border:1px solid #f97316;border-radius:8px;color:#fed7aa;font-size:13px;font-weight:600">⚠️ AI 沒抓到成本，價格無法正確計算，請手動填入上方「成本 / 拿貨價」。</div>
+
+    <div id="clothingFields">
+      <label>顏色</label>
+      <input id="colors" oninput="updateAll()"/>
+      <label>規格</label>
+      <input id="specs" value="F" oninput="updateAll()"/>
+      <label>尺寸 / 規格補充</label>
+      <textarea id="sizeText" oninput="updateAll()"></textarea>
+    </div>
+
+    <div id="skincareFields" class="hidden">
+      <label>容量 / 規格</label>
+      <input id="capacity" oninput="updateAll()"/>
+      <label>中文標籤｜用途</label>
+      <input id="labelPurpose" oninput="updateAll()"/>
+      <label>中文標籤｜保存期限</label>
+      <input id="labelExpiry" value="詳見產品外盒" oninput="updateAll()"/>
+      <label>中文標籤｜責任業者</label>
+      <input id="labelCompany" value="布布韓國工作室" oninput="updateAll()"/>
+      <label>中文標籤｜聯絡方式</label>
+      <input id="labelContact" value="@bubukorea" oninput="updateAll()"/>
+      <label>中文標籤｜產地</label>
+      <input id="labelOrigin" value="韓國" oninput="updateAll()"/>
+      <label>中文標籤｜使用方式 / 注意事項補充</label>
+      <textarea id="labelUsage" oninput="updateAll()"></textarea>
+    </div>
+
+    <div class="priceGrid">
+      <div class="mini"><div class="k">落地成本</div><div id="landed" class="v">0</div></div>
+      <div class="mini"><div class="k">原價</div><div id="retail" class="v">0</div><div id="retailProfit" class="profit"></div></div>
+      <div class="mini"><div class="k">VIP</div><div id="vip" class="v">0</div><div id="vipProfit" class="profit"></div></div>
+    </div>
+    <div class="priceGrid">
+      <div class="mini"><div class="k">VVIP</div><div id="vvip" class="v">0</div><div id="vvipProfit" class="profit"></div></div>
+      <div class="priceBox"><label>手動原價</label><input id="manualRetail" type="number" placeholder="可自行調整" oninput="updateAll()"/></div>
+      <div class="priceBox"><label>手動VIP</label><input id="manualVip" type="number" placeholder="可自行調整" oninput="updateAll()"/></div>
+    </div>
+    <div class="grid2">
+      <div class="priceBox"><label>手動VVIP</label><input id="manualVvip" type="number" placeholder="可自行調整" oninput="updateAll()"/></div>
+      <div class="priceBox"><label>市場價 / 價格備註</label><input id="priceNote" placeholder="AI偵測後自動填入，可手動調整" oninput="updateAll()"/></div>
+    </div>
+    <div id="marketAdvice" class="preview market" style="min-height:80px;margin-top:14px">尚未偵測。AI 整理商品後會自動偵測市場價格。</div>
+  </div>
+
+</div>
+
+<div class="card" style="margin-top:16px">
+  <h2>③ 完整貼文預覽</h2>
+  <div id="fullPost" class="preview">請先貼廠商原文，按「AI 自動整理商品」。</div>
+  <button class="btn gray" onclick="copyPost()">📋 一鍵複製完整貼文</button>
+</div>
+
+<div id="labelCard" class="card hidden" style="margin-top:16px">
+  <h2>④ 保養品中文標籤</h2>
+  <div id="labelPreview" class="preview"></div>
+  <button class="btn gray" onclick="copyLabel()">🏷️ 複製中文標籤</button>
+</div>
+
+
+<div class="card" style="margin-top:16px">
+  <h2>⑥ 雲端同步工作台</h2>
+  <div class="toolbar">
+    <button class="btn small purple" onclick="exportAiPlusExcel()">📤 匯出愛+1 Excel</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead>
+        <tr><th>狀態</th><th>商品</th><th>原價</th><th>VIP</th><th>VVIP</th><th>成本</th><th>動作</th></tr>
+      </thead>
+      <tbody id="taskBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <div class="sectionTitle">
+    <h2>💰 本月訂貨金額總覽</h2>
+    <span class="subtle">依 purchase_records 自動統計</span>
+  </div>
+  <div id="purchaseSummary" class="preview" style="min-height:60px;margin-top:10px">本月尚未登錄訂貨金額。</div>
+</div>
+
+
+<div class="card" style="margin-top:16px">
+  <div class="sectionTitle">
+    <h2>💰 訂貨金額總覽</h2>
+    <span class="subtle">依 purchase_records 的日期自動統計，歷史月份會留底</span>
+  </div>
+  <div class="grid2">
+    <div>
+      <label>查看月份</label>
+      <input id="purchaseMonthFilter" type="month" onchange="renderPurchaseRecords()"/>
+    </div>
+  </div>
+  <div class="statGrid" style="margin-top:10px">
+    <div class="statBox">
+      <div class="label" id="purchaseMonthLabel">本月訂貨金額</div>
+      <div id="selectedMonthPurchaseTotal" class="num">NT$0</div>
+      <div class="subtle">只統計所選月份，不會吃到上個月</div>
+    </div>
+    <div class="statBox">
+      <div class="label">MOMO 所選月份進度</div>
+      <div id="selectedMonthMomoTotal" class="num">NT$0 / NT$12,000</div>
+      <div class="subtle" id="selectedMonthMomoNote">依所選月份自動計算</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="card" style="margin-top:16px">
+  <div class="sectionTitle">
+    <h2>⑤ 供應商中心 V6.8（設定區）</h2>
+    <span class="subtle">低頻設定區：供應商代碼、進貨紀錄、MOMO低消追蹤</span>
+  </div>
+
+  <div class="statGrid">
+    <div class="statBox">
+      <div class="label"><span id="momoMonthLabel">本月</span> MOMO 低消進度</div>
+      <div id="momoProgressText" class="num">NT$0 / NT$12,000</div>
+      <div class="progressWrap"><div id="momoProgressBar" class="progressBar"></div></div>
+      <div id="momoProgressNote" class="subtle" style="margin-top:6px">尚未登錄進貨。</div>
+    </div>
+    <div class="statBox">
+      <div class="label"><span id="purchaseMonthLabel">本月</span>進貨總額</div>
+      <div id="monthPurchaseTotal" class="num">NT$0</div>
+      <div class="subtle">依 purchase_records 自動加總</div>
+    </div>
+    <div class="statBox">
+      <div class="label">供應商資料數</div>
+      <div id="supplierCount" class="num">0</div>
+      <div class="subtle">服飾代碼＋保養品供應商</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card" style="background:#0f172a">
+      <h2>👕 服飾代碼 / 供應商對照</h2>
+      <div class="grid2">
+        <div><label>代碼</label><input id="supplierCode" placeholder="例如 CA / DA / EA"/></div>
+        <div><label>供應商名稱</label><input id="supplierName" placeholder="例如 A米格"/></div>
+        <div><label>類型</label><select id="supplierType"><option value="服飾">服飾</option><option value="保養品">保養品</option><option value="生活用品">生活用品</option><option value="其他">其他</option></select></div>
+      </div>
+      <button class="btn small teal" onclick="addSupplier()">➕ 新增供應商對照</button>
+      <button class="btn small gray" onclick="seedDefaultSuppliers()">⚡ 載入預設供應商</button>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table class="miniTable"><thead><tr><th>代碼</th><th>供應商</th><th>類型</th><th>動作</th></tr></thead><tbody id="supplierBody"></tbody></table>
+      </div>
+    </div>
+
+    <div class="card" style="background:#0f172a">
+      <h2>💰 進貨金額登錄（保養品＋服飾）</h2>
+      <div class="grid2">
+        <div><label>供應商</label><select id="purchaseSupplier">
+            <option value="MOMO">MOMO</option>
+            <option value="韓妝批發">韓妝批發</option>
+            <option value="東大門美妝">東大門美妝</option>
+            <option value="SD批發">SD批發</option>
+            <option value="957批發">957批發</option>
+            <option value="A米格">A米格</option>
+            <option value="MC COKA">MC COKA</option>
+            <option value="MK smile">MK smile</option>
+            <option value="衣玥">衣玥</option>
+            <option value="APRIL">APRIL</option>
+            <option value="宜琳">宜琳</option>
+            <option value="727">727</option>
+            <option value="米淇">米淇</option>
+            <option value="宜美">宜美</option>
+            <option value="Circle">Circle</option>
+            <option value="H服飾">H服飾</option>
+            <option value="彎彎">彎彎</option>
+            <option value="米亞">米亞</option>
+          </select></div>
+        <div><label>日期（可填任何日期）</label><input id="purchaseDate" type="text" placeholder="例如 2026-06-09 或 2026-07-15"/></div>
+        <div><label>金額</label><input id="purchaseAmount" type="number" placeholder="例如 3500"/></div>
+      </div>
+      <label>備註</label>
+      <input id="purchaseNote" placeholder="例如 后+OHUI / 收據單"/>
+      <button class="btn small teal" onclick="addPurchaseRecord()">💾 儲存進貨紀錄</button>
+      <div style="overflow-x:auto;margin-top:10px">
+        <table class="miniTable"><thead><tr><th>日期</th><th>供應商</th><th>金額</th><th>備註</th><th>動作</th></tr></thead><tbody id="purchaseBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://xkjayekdbezakvnyjvwu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_6arvG__i8D6QAuP3MgV_7A_cmjmxzg_';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentCopy = '', parsedCategory = 'clothing', lastAutoAddedKey = '';
+let tasks = [], currentEditingId = null, autoSaveTimer = null;
+let suppliers = [], purchaseRecords = [];
+let dailyTasks = [];
+
+const get = id => document.getElementById(id);
+const val = id => get(id).value.trim();
+const set = (id, v) => { get(id).value = v || ''; };
+const ceil10 = n => Math.ceil((Number(n) || 0) / 10) * 10;
+const money = n => 'NT$' + Math.round(Number(n) || 0).toLocaleString();
+
+function cloud(text, ok = true) {
+  get('cloudStatus').textContent = text;
+  get('cloudStatus').classList.toggle('bad', !ok);
+}
+
+function cleanText(v, mode = 'line') {
+  let t = String(v || '').replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+  return mode === 'space' ? t.replace(/\s+/g, ' ').trim() : t.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function detectCategory() {
+  const s = val('category');
+  return s !== 'auto' ? s : (parsedCategory || 'clothing');
+}
+
+function getCost() {
+  return Number(detectCategory() === 'skincare' ? val('skincareCost') : val('clothingCost')) || 0;
+}
+
+// V6.5.5 毛利可視化：
+//  - 落地成本 +8（出貨包材）
+//  - 韓國模式：成本欄填韓幣，自動 ÷匯率 換台幣，再 ×1.27
+//  - 原價 /0.78、VIP /0.85、VVIP = VIP - 10
+function calcPrices() {
+  const mode = val('mode'), cat = detectCategory();
+
+  // 台灣模式：右邊成本欄直接填台幣成本
+  // 韓國模式：左邊「韓幣價格」優先；若沒填，才退回右邊成本欄
+  const originalCost = getCost();
+  const rate = Number(val('krwRate')) || 40;
+  const krwManual = Number(val('krwPrice')) || 0;
+
+  let cost = originalCost;
+  let landed = 0;
+  let convertedCost = 0;
+
+  if (mode === 'taiwan') {
+    landed = cost + 8;
+    convertedCost = cost;
+  } else {
+    const krwCost = krwManual > 0 ? krwManual : originalCost;
+    convertedCost = Math.ceil(krwCost / rate);
+    cost = convertedCost;
+    landed = Math.ceil(convertedCost * 1.27) + 8;
+  }
+
+  const base = landed;
+  let retail = ceil10((base + 54) / 0.78);
+  let vip    = ceil10((base + 47) / 0.85);
+  let vvip   = vip - 10;
+  const mr = Number(val('manualRetail')) || 0;
+  const mv = Number(val('manualVip')) || 0;
+  const mw = Number(val('manualVvip')) || 0;
+  if (mr > 0) retail = mr;
+  if (mv > 0) vip = mv;
+  if (mw > 0) vvip = mw;
+  return { landed, retail, vip, vvip, wholesale: vvip, cost, cat, priceBase: base, convertedCost };
+}
+
+function switchMode() {
+  const skin = detectCategory() === 'skincare';
+  get('clothingFields').classList.toggle('hidden', skin);
+  get('clothingCostBox').classList.toggle('hidden', skin);
+  get('skincareFields').classList.toggle('hidden', !skin);
+  get('skincareCostBox').classList.toggle('hidden', !skin);
+  get('labelCard').classList.toggle('hidden', !skin);
+}
+
+function updateAll() {
+  // 韓國模式才顯示匯率欄與韓幣價格欄
+  const isKoreaMode = val('mode') === 'korea';
+  const krwBox = get('krwRateBox');
+  if (krwBox) krwBox.classList.toggle('hidden', !isKoreaMode);
+  const krwPriceBox = get('krwPriceBox');
+  if (krwPriceBox) krwPriceBox.classList.toggle('hidden', !isKoreaMode);
+  const p = calcPrices();
+  const krwConvertedBox = get('krwConvertedBox');
+  if (krwConvertedBox) krwConvertedBox.classList.toggle('hidden', !isKoreaMode);
+  const krwConvertedCost = get('krwConvertedCost');
+  if (krwConvertedCost) krwConvertedCost.textContent = money(p.convertedCost || 0);
+  // V6.5.2.7：成本為 0 / 空白時顯示橘色提醒（只在已輸入商品名稱時提醒，避免一開始就跳）
+  const warnBox = get('costWarning');
+  if (warnBox) {
+    const hasName = !!val('productName');
+    warnBox.classList.toggle('hidden', !(hasName && p.cost <= 0));
+  }
+  get('landed').textContent = money(p.landed);
+  get('retail').textContent = money(p.retail);
+  get('vip').textContent = money(p.vip);
+  get('vvip').textContent = money(p.vvip);
+
+  // V6.5.5 毛利顯示：每級價格底下顯示「賺多少 + 毛利%」+ 紅黃綠顏色
+  // 毛利率 = (售價 − 進價) ÷ 售價（用「未含包材的純進價」當底，最接近真實感受）
+  // 顏色標準：>30% 綠（健康）、20-30% 黃（偏低）、<20% 紅（警戒）
+  function showProfit(boxId, sellPrice) {
+    const box = get(boxId);
+    if (!box) return;
+    const cost = Number(p.cost) || 0;
+    if (cost <= 0 || sellPrice <= 0) { box.textContent = ''; box.className = 'profit'; return; }
+    const profit = sellPrice - cost;
+    const margin = profit / sellPrice * 100;
+    let cls = 'profit ';
+    if (margin >= 30) cls += 'good';
+    else if (margin >= 20) cls += 'okay';
+    else cls += 'bad';
+    box.className = cls;
+    box.textContent = `賺 ${money(profit)} (${margin.toFixed(0)}%)`;
+  }
+  showProfit('retailProfit', p.retail);
+  showProfit('vipProfit', p.vip);
+  showProfit('vvipProfit', p.vvip);
+  switchMode();
+  const vendor = val('vendorCode'), name = val('productName');
+  const title = vendor && name && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : (name || '');
+  const copy = cleanText(currentCopy) || '文案生成中或尚未生成。';
+  let full = '';
+  if (p.cat === 'skincare') {
+    const cap = val('capacity') || '依實際包裝標示';
+    full = `${title}\n\n價格：${p.retail}\n規格：${cap}\n\n——————————\n\n${copy}`;
+    updateLabelPreview(title);
+  } else {
+    const colors = val('colors') || '單一色';
+    const specs = val('specs') || 'F';
+    const size = cleanText(val('sizeText'));
+    full = `${title}\n\n顏色：${colors}\n規格：${specs}\n價格：${p.retail}\n\n${size ? '📏 尺寸（平量cm）\n' + size + '\n' : ''}——————————\n\n${copy}`;
+  }
+  get('fullPost').textContent = cleanText(full);
+  if (currentEditingId) scheduleAutoSync();
+}
+
+function updateLabelPreview(title) {
+  get('labelPreview').textContent = cleanText(
+    `${title || val('productName')}\n${val('capacity') || '依實際包裝標示'}｜${val('labelOrigin') || '韓國'}\n用途：${val('labelPurpose') || '日常保養／清潔使用'}\n保存期限：${val('labelExpiry') || '詳見產品外盒'}\n責任業者：${val('labelCompany') || '布布韓國工作室'}\n聯絡方式：${val('labelContact') || '@bubukorea'}${val('labelUsage') ? '\n\n' + cleanText(val('labelUsage')) : ''}`
+  );
+}
+
+async function parseVendor() {
+  const rawText = val('rawText');
+  if (!rawText) { alert('請先貼上廠商原文'); return; }
+  // V6.5.4 修 bug：整理新商品前，先清掉「正在編輯」的舊 id，
+  // 避免後續市場價格偵測寫進上一筆，造成上一筆被新商品覆蓋。
+  currentEditingId = null;
+  const btn = get('parseBtn');
+  btn.disabled = true;
+  btn.textContent = 'AI整理中...';
+  try {
+    const res = await fetch('/api/parse-vendor', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rawText, vendorCode: val('vendorCode'), selectedCategory: val('category'), mode: val('mode') })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '解析失敗');
+    parsedCategory = data.category || 'clothing';
+    set('productName', cleanText(data.productName, 'space'));
+    set('colors', cleanText(data.colors || '單一色', 'space'));
+
+    // V6.5.2.5 防護：清理 specs，如果 AI 又亂填特色關鍵字就改成 F
+    let cleanSpecs = cleanText(data.specs || 'F', 'space');
+    const badWords = /(設計|版型|面料|風格|款式|剪裁|材質|布料|工藝|腰帶|裙襬)/;
+    if (badWords.test(cleanSpecs)) {
+      console.warn('AI 又把特色關鍵字填進 specs，已自動改為 F：', cleanSpecs);
+      cleanSpecs = 'F';
+    }
+    set('specs', cleanSpecs);
+
+    // V6.5.2.5 防護：sizeText 如果被 AI 用分號擠成一行，改回換行
+    let cleanSize = cleanText(data.sizeText);
+    if (cleanSize && !cleanSize.includes('\n') && /[;；]/.test(cleanSize)) {
+      cleanSize = cleanSize.split(/\s*[;；]\s*/).filter(Boolean).join('\n');
+    }
+    set('sizeText', cleanSize);
+    set('capacity', cleanText(data.capacity || data.specs || '', 'space'));
+    if (val('mode') === 'korea') {
+      set('krwPrice', data.cost || '');
+      if (parsedCategory === 'skincare') set('skincareCost', '');
+      else set('clothingCost', '');
+    } else {
+      if (parsedCategory === 'skincare') set('skincareCost', data.cost || '');
+      else set('clothingCost', data.cost || '');
+    }
+    set('labelPurpose', cleanText(data.labelPurpose, 'space'));
+    set('labelExpiry', cleanText(data.labelExpiry || '詳見產品外盒', 'space'));
+    set('labelCompany', cleanText(data.labelCompany || '布布韓國工作室', 'space'));
+    set('labelContact', cleanText(data.labelContact || '@bubukorea', 'space'));
+    set('labelOrigin', cleanText(data.labelOrigin || '韓國', 'space'));
+    set('labelUsage', cleanText(data.labelUsage));
+    currentCopy = cleanText(data.copy);
+    set('manualRetail', ''); set('manualVip', ''); set('manualVvip', '');
+    set('priceNote', '');
+    get('marketAdvice').textContent = '尚未偵測。';
+    updateAll();
+    // V6.5.4：整理完成後一律自動加入工作台（拿掉 autoAdd 勾選框依賴）
+    const key = val('vendorCode') + '|' + val('productName') + '|' + getCost();
+    if (key !== lastAutoAddedKey) { await addTask(true); lastAutoAddedKey = key; }
+    // V6.5.2.4：AI 整理完成後自動偵測市場價格（不阻塞主流程，失敗也沒關係）
+    checkMarketPrice(true).then(() => {
+      // 偵測完成後再同步一次工作台，把 marketAdvice / priceNote 寫進去
+      if (currentEditingId) scheduleAutoSync();
+    });
+  } catch (e) {
+    currentCopy = '解析失敗：' + e.message + '\n請確認 Vercel 的 GEMINI_API_KEY 已設定，或稍後再試。';
+    updateAll();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ AI 自動整理商品';
+  }
+}
+
+async function loadTasks() {
+  try {
+    const { data, error } = await supabaseClient.from('tasks').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+
+    // V6.7：已同步商品保留24小時後自動刪除
+    // 只有 done=true 才會刪；未同步商品永遠不自動刪。
+    const now = Date.now();
+    const keepRows = [];
+    const deleteIds = [];
+
+    (data || []).forEach(r => {
+      let content = {};
+      try { content = JSON.parse(r.content || '{}'); } catch (e) {}
+
+      const syncedTime = content.syncedAt || r.created_at;
+      const ageMs = syncedTime ? (now - new Date(syncedTime).getTime()) : 0;
+      const shouldDelete = content.done === true && ageMs > 24 * 60 * 60 * 1000;
+
+      if (shouldDelete) deleteIds.push(r.id);
+      else keepRows.push(r);
+    });
+
+    if (deleteIds.length) {
+      await supabaseClient.from('tasks').delete().in('id', deleteIds);
+    }
+
+    tasks = keepRows.map(r => ({ id: r.id, created_at: r.created_at, ...JSON.parse(r.content) }));
+    renderTasks();
+    cloud(deleteIds.length ? `☁️ 雲端已同步，已自動清理 ${deleteIds.length} 筆已同步舊資料` : '☁️ 雲端已同步', true);
+  } catch (e) {
+    cloud('雲端讀取失敗：' + e.message, false);
+  }
+}
+
+async function addTask(silent = false) {
+  const p = calcPrices(), vendor = val('vendorCode'), name = val('productName');
+  if (!name) { if (!silent) alert('沒有商品名稱'); return; }
+  const title = vendor && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : name;
+
+  // V6.5.4 防重複：用「商品標題」當唯一識別（不再比對成本，因為AI偶爾抓不一樣會誤判）。
+  // 找到同名商品 → 就更新那一筆，不新增；找不到才新增。徹底杜絕重複與覆蓋別筆的問題。
+  const existing = tasks.find(t => t.title === title);
+  if (existing) {
+    // 手動按「加入工作台」時，跳框確認；自動加入(silent)時，直接更新不打擾
+    if (!silent) {
+      if (!confirm(`工作台已有同名商品「${title}」，要用目前的資料覆蓋舊的嗎？`)) {
+        return;
+      }
+    }
+    currentEditingId = existing.id;
+    await scheduleAutoSync();   // 直接觸發同步把現在欄位寫進那筆
+    return;
+  }
+
+  const item = {
+    done: false, title,
+    retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
+    cost: p.cost, category: p.cat,
+    colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
+    capacity: val('capacity'),
+    priceNote: val('priceNote'),
+    marketAdvice: get('marketAdvice').innerText,
+    time: new Date().toLocaleString(),
+    fullPost: get('fullPost').innerText,
+    copy: currentCopy,
+    label: get('labelPreview') ? get('labelPreview').innerText : ''
+  };
+  const { data, error } = await supabaseClient.from('tasks').insert({ content: JSON.stringify(item) }).select('*').single();
+  if (error) { alert('雲端新增失敗：' + error.message); return; }
+  currentEditingId = data.id;
+  await loadTasks();
+}
+
+async function toggleTask(i) {
+  const t = tasks[i];
+  const newDone = !t.done;
+  const u = { ...t, done: newDone };
+
+  // V6.7：按「已同步」時記錄同步時間，24小時自動清理會以此為基準。
+  if (newDone) u.syncedAt = new Date().toISOString();
+  else delete u.syncedAt;
+
+  delete u.id;
+  delete u.created_at;
+
+  const { error } = await supabaseClient.from('tasks').update({ content: JSON.stringify(u) }).eq('id', t.id);
+  if (error) { alert('更新失敗：' + error.message); return; }
+  await loadTasks();
+}
+
+async function deleteTask(i) {
+  if (!confirm('確定刪除這筆？')) return;
+  const { error } = await supabaseClient.from('tasks').delete().eq('id', tasks[i].id);
+  if (error) { alert('刪除失敗：' + error.message); return; }
+  await loadTasks();
+}
+
+function renderTasks() {
+  get('taskBody').innerHTML = tasks.map((t, i) => `
+    <tr>
+      <td><span class="pill ${t.done ? 'done' : ''}">${t.done ? '✅ 已同步' : '⏳ 未同步'}</span>${t.done && t.syncedAt ? `<br><span style="font-size:11px;color:#94a3b8">約${Math.max(0, Math.ceil((24*60*60*1000 - (Date.now()-new Date(t.syncedAt).getTime()))/3600000))}小時後清理</span>` : ''}</td>
+      <td>${t.title}<br><span style="font-size:12px;color:#64748b">${t.time || ''}${t.priceNote ? '<br>備註：' + t.priceNote : ''}</span></td>
+      <td>${t.retail || ''}</td>
+      <td><b>${t.vip || ''}</b></td>
+      <td><b>${t.vvip || t.wholesale || ''}</b></td>
+      <td>${t.cost}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn small gray" onclick="copyTaskPost(${i})">📋 文案</button>
+        <button class="btn small gray" onclick="copyTaskLabel(${i})">🏷️ 標籤</button>
+        <button class="btn small" onclick="editTask(${i})">✏️ 編輯</button>
+        <button class="btn small" onclick="toggleTask(${i})">✔ 已同步</button>
+        <button class="btn small red" onclick="deleteTask(${i})">刪除</button>
+      </td>
+    </tr>`).join('');
+}
+
+function copyTaskPost(i) {
+  const t = tasks[i];
+  const text = t.fullPost || t.copy || t.title || '';
+  navigator.clipboard.writeText(text).then(() => alert('已複製文案'));
+}
+
+function copyTaskLabel(i) {
+  const t = tasks[i];
+  const text = t.label || '';
+  if (!text) { alert('這筆目前沒有中文標籤'); return; }
+  navigator.clipboard.writeText(text).then(() => alert('已複製中文標籤'));
+}
+
+function editTask(i) {
+  const t = tasks[i];
+  currentEditingId = t.id;
+  set('productName', (t.title || '').replace(/^.*?｜/, ''));
+  if ((t.category || detectCategory()) === 'skincare') set('skincareCost', t.cost || '');
+  else set('clothingCost', t.cost || '');
+  set('manualRetail', t.retail || '');
+  set('manualVip', t.vip || '');
+  set('manualVvip', t.vvip || t.wholesale || '');
+  set('priceNote', t.priceNote || '');
+  get('marketAdvice').textContent = t.marketAdvice || '尚未偵測。';
+  currentCopy = t.copy || '';
+  updateAll();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  cloud('✏️ 已進入編輯模式，價格修改會自動同步', true);
+}
+
+function scheduleAutoSync() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(autoSyncCurrentTask, 700);
+}
+
+async function autoSyncCurrentTask() {
+  if (!currentEditingId) return;
+  const p = calcPrices(), vendor = val('vendorCode'), name = val('productName');
+  if (!name) return;
+  const old = tasks.find(t => t.id === currentEditingId) || {};
+  const title = vendor && name && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : name;
+  const updated = {
+    ...old, done: old.done || false, syncedAt: old.syncedAt || null, title,
+    retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
+    cost: p.cost, category: p.cat,
+    colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
+    capacity: val('capacity'),
+    priceNote: val('priceNote'),
+    marketAdvice: get('marketAdvice').innerText,
+    time: old.time || new Date().toLocaleString(),
+    updatedAt: new Date().toLocaleString(),
+    fullPost: get('fullPost').innerText,
+    copy: currentCopy,
+    label: get('labelPreview') ? get('labelPreview').innerText : ''
+  };
+  delete updated.id;
+  const { error } = await supabaseClient.from('tasks').update({ content: JSON.stringify(updated) }).eq('id', currentEditingId);
+  if (error) { cloud('自動同步失敗：' + error.message, false); return; }
+  cloud('⚡ 已自動同步工作台', true);
+  await loadTasks();
+}
+
+// V6.5.2.4 自動偵測市場價格
+// silent=true 時不要 alert，靜默失敗（用於自動觸發）
+async function checkMarketPrice(silent = false) {
+  const name = val('productName');
+  if (!name) {
+    if (!silent) alert('請先產生商品名稱');
+    return;
+  }
+  const p = calcPrices();
+  const box = get('marketAdvice');
+  box.textContent = '🔎 AI 正在偵測市場價格，請稍候...';
+  try {
+    const res = await fetch('/api/price-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productName: name, category: detectCategory(),
+        retail: p.retail, vip: p.vip, vvip: p.vvip,
+        cost: p.cost, copy: currentCopy
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '市場價格偵測失敗');
+
+    const advice = cleanText(data.advice || '');
+    const shortNote = cleanText(data.shortNote || '', 'space');
+
+    if (!advice && !shortNote) {
+      // AI 完全沒給結果
+      box.textContent = '❌ AI 偵測不到此商品的市場價格。\n建議手動查蝦皮 / Google / 同行價格後寫進「市場價 / 價格備註」。';
+      return;
+    }
+    box.textContent = '✅ ' + (advice || shortNote);
+    if (shortNote) set('priceNote', shortNote);
+    updateAll();
+  } catch (e) {
+    box.textContent = '❌ AI 偵測不到此商品的市場價格。\n原因：' + e.message + '\n可手動查蝦皮 / Google / 同行價格後寫進「市場價 / 價格備註」。';
+  }
+}
+
+// V6.5.2.3 愛+1完整相容
+// 1. 表頭格式對齊範本（前 6 列說明 + 第 7 列才是欄位名）
+// 2. 顏色×尺寸拆成多列；第一列填商品資訊，後面只填款式 + 價格
+// 3. 備註欄（第33欄）放完整 AI 市場價格偵測結果
+// 4. 匯出前 prompt 輸入結團日期
+
+// 解析顏色字串 → 陣列；常見分隔符號：/ , 、 ， | 全形/半形 都吃
+function parseColors(str) {
+  if (!str) return ['單一色'];
+  const arr = String(str).split(/[\/,、，|｜\s]+/).map(s => s.trim()).filter(Boolean);
+  return arr.length ? arr : ['單一色'];
+}
+
+// 解析尺寸字串 → 陣列；同上
+function parseSpecs(str) {
+  if (!str) return ['F'];
+  const arr = String(str).split(/[\/,、，|｜\s]+/).map(s => s.trim()).filter(Boolean);
+  return arr.length ? arr : ['F'];
+}
+
+function buildAiPlusRows(deadline) {
+  // 對齊範本：前 6 列說明 + 第 7 列才是真正表頭
+  const rows = [
+    ['版本號：', 20260504],
+    ['愛＋１匯入說明'],
+    ['. 標題標記 : 【 ＊ : 必填 】,【 # : 如符合條件則必填 】,【 無標記：可選填 】'],
+    ['. 欄位底色 : 【 灰色 : 商品資訊 】,【 黃色 : 款式資訊 】,【 紫色: 價格資訊 】'],
+    ['. 註 : 同商品不同款式, 則僅第一筆需填入商品資訊, 且僅有第一筆資料會匯入'],
+    ['＊', '＊', '＊', '', '', '', '', '', '＊', '', '', '', '', '', '#'],
+    ['開團類型', '商品名稱', '結團日期', '內文', '主圖片連結', '主款式', '副款式1', '副款式2', '售價', '成本', '供應商', '商品編號', '款式編號', '款式圖片', '庫存 ( 現貨必填 )', '倉位', '其他圖片連結1', '其他圖片連結2', '其他圖片連結3', '其他圖片連結4', '其他圖片連結5', '影片連結', '特價', 'VIP', 'VVIP', 'SVIP', 'SVVIP', '條碼', '折扣種類', '折扣件數\n(件)', '折扣價格\n(元)', '折扣比例\n(％)', '備註']
+  ];
+
+  const pending = tasks.filter(t => !t.done);
+
+  pending.forEach(t => {
+    const isSkincare = t.category === 'skincare';
+    const colorList = isSkincare ? [t.capacity || '單一規格'] : parseColors(t.colors);
+    const specList = isSkincare ? [''] : parseSpecs(t.specs);
+
+    // 完整文案（內文欄）
+    const content = t.fullPost || t.copy || '';
+    // V6.5.2.6：備註欄完全不匯出，AI市場價格分析保留在工作台供內部查看
+
+    let firstRow = true;
+    colorList.forEach(color => {
+      specList.forEach(spec => {
+        const row = new Array(33).fill('');
+        if (firstRow) {
+          row[0] = '預購';              // 開團類型
+          row[1] = t.title || '';        // 商品名稱
+          row[2] = deadline;             // 結團日期
+          row[3] = content;              // 內文
+          // row[4] 主圖片連結 留空
+        }
+        row[5] = color;                  // 主款式
+        row[6] = spec;                   // 副款式1
+        // row[7] 副款式2 留空
+        row[8] = t.retail || '';         // 售價
+        if (firstRow) {
+          row[9] = t.cost || '';         // 成本（只放第一列即可）
+        }
+        // row[14] 庫存：預購不必填，留空
+        row[23] = t.vip || '';           // VIP
+        row[24] = t.vvip || t.wholesale || ''; // VVIP
+        // V6.5.2.6：備註欄不匯出（愛+1有128字限制，AI市場價格分析保留在工作台內部使用）
+        // row[32] 備註留空
+        rows.push(row);
+        firstRow = false;
+      });
+    });
+  });
+
+  return rows;
+}
+
+// 把今天 +N 天格式化成 yyyy/MM/dd
+function defaultDeadline(daysAhead = 30) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}/${mm}/${dd}`;
+}
+
+function exportAiPlusExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Excel匯出模組尚未載入，請重新整理後再試');
+    return;
+  }
+  const pending = tasks.filter(t => !t.done);
+  if (pending.length === 0) {
+    alert('目前沒有未完成商品可匯出');
+    return;
+  }
+
+  // 跳出對話框讓用戶輸入結團日期
+  const suggested = defaultDeadline(30);
+  let deadline = prompt(`請輸入結團日期（格式 yyyy/MM/dd）\n\n建議：${suggested}\n（直接按 Enter 採用建議值）`, suggested);
+  if (deadline === null) return; // 用戶按取消
+  deadline = deadline.trim() || suggested;
+
+  // 格式檢查
+  if (!/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(deadline)) {
+    alert('結團日期格式錯誤，請用 yyyy/MM/dd 例如 2026/06/27');
+    return;
+  }
+
+  const rows = buildAiPlusRows(deadline);
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '開團資訊');
+  XLSX.writeFile(wb, 'Bubu愛加一匯入_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+}
+
+function copyPost() {
+  navigator.clipboard.writeText(get('fullPost').innerText).then(() => alert('已複製完整貼文'));
+}
+
+function copyLabel() {
+  navigator.clipboard.writeText(get('labelPreview').innerText).then(() => alert('已複製中文標籤'));
+}
+
+
+
+// ─────────────────────────────
+// V7.0 今日排程中心：打勾修正版
+// ─────────────────────────────
+const fashionSchedule = {
+  '2026-06-15': ['A米格', 'MC COKA'],
+  '2026-06-16': ['MK smile', '米淇'],
+  '2026-06-17': ['衣玥', 'APRIL'],
+  '2026-06-18': ['宜琳', '727'],
+  '2026-06-19': ['Circle', '宜美'],
+  '2026-06-20': ['A米格', '彎彎'],
+  '2026-06-21': ['MC COKA', 'H服飾'],
+  '2026-06-22': ['米亞', 'MK smile'],
+  '2026-06-23': ['APRIL', '衣玥'],
+  '2026-06-24': ['727', '米淇'],
+  '2026-06-25': ['A米格', '宜美'],
+  '2026-06-26': ['Circle', 'MC COKA'],
+  '2026-06-27': ['MK smile', '彎彎'],
+  '2026-06-28': ['H服飾', '宜琳'],
+  '2026-06-29': ['米亞', 'APRIL'],
+  '2026-06-30': ['A米格', '衣玥']
+};
+const skincareCycle = ['MOMO', 'SD', '957', '東大門', '韓妝'];
+
+function getTodayTaskDate() { return todayISO(); }
+function dateLabel(dateStr) { return String(dateStr || '').replaceAll('-', '/'); }
+
+function safeKey(dateStr, category, taskName) {
+  return btoa(unescape(encodeURIComponent(`${dateStr}||${category}||${taskName}`))).replaceAll('=', '');
+}
+
+function getSkincareForDate(dateStr) {
+  const start = new Date('2026-06-15T00:00:00');
+  const cur = new Date(dateStr + 'T00:00:00');
+  const diff = Math.floor((cur - start) / (24 * 60 * 60 * 1000));
+  const index = ((diff % skincareCycle.length) + skincareCycle.length) % skincareCycle.length;
+  return skincareCycle[index];
+}
+
+function fallbackFashionForDate(dateStr) {
+  const all = ['A米格','MC COKA','MK smile','米淇','衣玥','APRIL','宜琳','727','Circle','宜美','彎彎','H服飾','米亞'];
+  const start = new Date('2026-06-15T00:00:00');
+  const cur = new Date(dateStr + 'T00:00:00');
+  const diff = Math.max(0, Math.floor((cur - start) / (24 * 60 * 60 * 1000)));
+  return [all[(diff * 2) % all.length], all[(diff * 2 + 1) % all.length]];
+}
+
+function getScheduleForDate(dateStr) {
+  const fashion = fashionSchedule[dateStr] || fallbackFashionForDate(dateStr);
+  const items = [
+    { category: '服飾', task_name: fashion[0] },
+    { category: '服飾', task_name: fashion[1] },
+    { category: '保養品巡查', task_name: getSkincareForDate(dateStr) },
+    { category: '每日必做', task_name: '回客人' }
+  ];
+  const day = new Date(dateStr + 'T00:00:00').getDay();
+  if (day >= 1 && day <= 3) items.push({ category: '每日必做', task_name: '出貨' });
+  return items;
+}
+
+function isTaskCompleted(dateStr, category, taskName) {
+  return dailyTasks.some(t => t.task_date === dateStr && t.category === category && t.task_name === taskName && t.completed === true);
+}
+
+async function loadDailyTasks() {
+  // V7.0：最穩版本。
+  // 不用 gte/lte/order 查詢，避免 Supabase 對新表回 400。
+  // 先全部讀取，再在前端自己篩本月資料。
+  renderTodaySchedule();
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('daily_tasks')
+      .select('*');
+
+    if (error) throw error;
+
+    const start = monthStartISO();
+    const end = monthEndISO();
+
+    dailyTasks = (data || []).filter(t => {
+      const d = String(t.task_date || '').slice(0, 10);
+      return d >= start && d <= end;
+    });
+
+    renderTodaySchedule();
+    renderMonthlyTaskSummary();
+  } catch (e) {
+    console.error('daily_tasks error:', e);
+    const box = get('monthlyTaskSummary');
+    if (box) box.textContent = 'daily_tasks 讀取失敗，請確認欄位名稱是否正確。';
+    cloud('每日排程讀取失敗：' + (e.message || '未知錯誤'), false);
+  }
+}
+
+function renderTodaySchedule() {
+  const body = get('scheduleBody');
+  if (!body) return;
+  const dateStr = getTodayTaskDate();
+  const dateText = get('scheduleDateText');
+  if (dateText) dateText.textContent = `今日：${dateLabel(dateStr)}`;
+
+  const groups = {};
+  getScheduleForDate(dateStr).forEach(item => {
+    if (!groups[item.category]) groups[item.category] = [];
+    groups[item.category].push(item);
+  });
+
+  body.innerHTML = Object.keys(groups).map(category => `
+    <div class="taskGroup">
+      <h3>${category}</h3>
+      ${groups[category].map(item => {
+        const checked = isTaskCompleted(dateStr, item.category, item.task_name);
+        const key = safeKey(dateStr, item.category, item.task_name);
+        return `<label class="taskItem">
+          <input
+            type="checkbox"
+            class="dailyTaskCheck"
+            id="task_${key}"
+            data-date="${dateStr}"
+            data-category="${item.category}"
+            data-name="${item.task_name}"
+            ${checked ? 'checked' : ''}>
+          <span class="${checked ? 'taskDoneText' : ''}">${item.task_name}</span>
+        </label>`;
+      }).join('')}
+    </div>`).join('');
+
+  bindDailyTaskEvents();
+}
+
+function bindDailyTaskEvents() {
+  document.querySelectorAll('.dailyTaskCheck').forEach(el => {
+    el.addEventListener('change', async function() {
+      const dateStr = this.dataset.date;
+      const category = this.dataset.category;
+      const taskName = this.dataset.name;
+      const completed = this.checked;
+      await toggleDailyTask(dateStr, category, taskName, completed);
+    });
+  });
+}
+
+async function toggleDailyTask(dateStr, category, taskName, completed) {
+  try {
+    cloud(completed ? `儲存中：${taskName}` : `取消中：${taskName}`, true);
+
+    const existing = dailyTasks.find(t =>
+      t.task_date === dateStr &&
+      t.category === category &&
+      t.task_name === taskName
+    );
+
+    if (existing) {
+      const { error } = await supabaseClient.from('daily_tasks').update({
+        completed,
+        completed_at: completed ? new Date().toISOString() : null
+      }).eq('id', existing.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseClient.from('daily_tasks').insert({
+        task_date: dateStr,
+        category,
+        task_name: taskName,
+        completed,
+        completed_at: completed ? new Date().toISOString() : null
+      });
+      if (error) throw error;
+    }
+
+    await loadDailyTasks();
+    cloud(completed ? `✅ 已完成：${taskName}` : `↩️ 已取消：${taskName}`, true);
+  } catch (e) {
+    alert('排程儲存失敗：' + (e.message || JSON.stringify(e)));
+    cloud('排程儲存失敗：' + e.message, false);
+    await loadDailyTasks();
+  }
+}
+
+function renderMonthlyTaskSummary() {
+  const box = get('monthlyTaskSummary');
+  if (!box) return;
+  const dateStr = getTodayTaskDate();
+  const monthLabel = `${new Date().getMonth() + 1}月`;
+  const todayItems = getScheduleForDate(dateStr);
+  const todayDone = todayItems.filter(item => isTaskCompleted(dateStr, item.category, item.task_name)).length;
+  const completed = dailyTasks.filter(t => t.completed === true);
+
+  if (!completed.length) {
+    box.textContent = `${monthLabel}尚未完成任何排程項目。
+今日完成率：${todayDone}/${todayItems.length}
+先打勾「回客人／出貨／巡查」後，這裡就會開始累計。`;
+    return;
+  }
+
+  const byName = {};
+  completed.forEach(t => {
+    const key = `${t.category}｜${t.task_name}`;
+    byName[key] = (byName[key] || 0) + 1;
+  });
+  box.textContent = `${monthLabel}營運成績單
+今日完成率：${todayDone}/${todayItems.length}
+
+` + Object.entries(byName)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([k,c]) => `${k}：${c}次`)
+    .join('
+');
+}
+
+// ─────────────────────────────
+// V6.8 供應商中心
+// ─────────────────────────────
+
+
+function currentMonthValue() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function getSelectedPurchaseMonth() {
+  const el = get('purchaseMonthFilter');
+  if (!el) return currentMonthValue();
+  if (!el.value) el.value = currentMonthValue();
+  return el.value;
+}
+
+function monthLabelFromValue(v) {
+  const [y, m] = String(v || currentMonthValue()).split('-');
+  return `${Number(m)}月`;
+}
+
+function todayISO() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function normalizePurchaseDate(v){
+  const raw = String(v || '').trim();
+  if(!raw) return todayISO();
+  const m = raw.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(!m) return null;
+  return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+}
+
+
+function monthStartISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+}
+
+function monthEndISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-31`;
+}
+
+async function loadSuppliers() {
+  try {
+    const { data, error } = await supabaseClient.from('suppliers').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    suppliers = data || [];
+    renderSuppliers();
+    updatePurchaseSupplierOptions();
+  } catch (e) {
+    cloud('供應商讀取失敗：' + e.message, false);
+  }
+}
+
+function renderSuppliers() {
+  const body = get('supplierBody');
+  if (!body) return;
+  get('supplierCount').textContent = suppliers.length;
+  body.innerHTML = suppliers.map((s, i) => `
+    <tr>
+      <td><b>${s.code || '-'}</b></td>
+      <td>${s.supplier_name || ''}</td>
+      <td>${s.supplier_type || ''}</td>
+      <td><button class="btn small red" onclick="deleteSupplier(${i})">刪除</button></td>
+    </tr>`).join('') || '<tr><td colspan="4" class="subtle">尚未建立供應商資料</td></tr>';
+}
+
+function updatePurchaseSupplierOptions() {
+  const el = get('purchaseSupplier');
+  if (!el) return;
+
+  // V6.8.1：進貨金額不只保養品，服飾供應商也可以登錄。
+  // 供應商下拉會合併「預設清單」＋「suppliers 表裡所有供應商名稱」。
+  const base = [
+    'MOMO','韓妝批發','東大門美妝','SD批發','957批發',
+    'A米格','MC COKA','MK smile','衣玥','APRIL','宜琳','727',
+    '米淇','宜美','Circle','H服飾','彎彎','米亞'
+  ];
+  const fromSuppliers = suppliers.map(s => s.supplier_name).filter(Boolean);
+  const names = [...new Set([...base, ...fromSuppliers])];
+  const current = el.value;
+  el.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (names.includes(current)) el.value = current;
+}
+
+async function addSupplier() {
+  const code = val('supplierCode').toUpperCase();
+  const supplier_name = val('supplierName');
+  const supplier_type = val('supplierType') || '服飾';
+  if (!code || !supplier_name) { alert('請輸入代碼與供應商名稱'); return; }
+
+  const { error } = await supabaseClient.from('suppliers').insert({ code, supplier_name, supplier_type });
+  if (error) { alert('新增供應商失敗：' + error.message); return; }
+  set('supplierCode',''); set('supplierName','');
+  await loadSuppliers();
+  cloud('✅ 供應商已新增', true);
+}
+
+async function deleteSupplier(i) {
+  const s = suppliers[i];
+  if (!s || !confirm(`確定刪除 ${s.code} → ${s.supplier_name}？`)) return;
+  const { error } = await supabaseClient.from('suppliers').delete().eq('id', s.id);
+  if (error) { alert('刪除供應商失敗：' + error.message); return; }
+  await loadSuppliers();
+}
+
+async function seedDefaultSuppliers() {
+  const defaults = [
+    ['CA','A米格','服飾'], ['DA','A米格','服飾'], ['EA','A米格','服飾'],
+    ['MC','MC COKA','服飾'], ['MK','MK smile','服飾'],
+    ['BY','衣玥','服飾'], ['AP','APRIL','服飾'], ['YL','宜琳','服飾'],
+    ['F727','727','服飾'], ['MQ','米淇','服飾'], ['YM','宜美','服飾'],
+    ['CI','Circle','服飾'], ['HF','H服飾','服飾'], ['WW','彎彎','服飾'], ['MY','米亞','服飾'],
+    ['MO','MOMO','保養品'], ['HZ','韓妝批發','保養品'], ['DD','東大門美妝','保養品'],
+    ['SD','SD批發','保養品'], ['957','957批發','保養品']
+  ];
+
+  const existingKeys = new Set(suppliers.map(s => `${s.code}|${s.supplier_name}`));
+  const rows = defaults
+    .filter(([code, name]) => !existingKeys.has(`${code}|${name}`))
+    .map(([code, supplier_name, supplier_type]) => ({ code, supplier_name, supplier_type }));
+
+  if (!rows.length) { alert('預設供應商已經載入過了'); return; }
+
+  const { error } = await supabaseClient.from('suppliers').insert(rows);
+  if (error) { alert('載入預設供應商失敗：' + error.message); return; }
+  await loadSuppliers();
+  cloud(`✅ 已載入 ${rows.length} 筆預設供應商`, true);
+}
+
+async function loadPurchaseRecords() {
+  try {
+    const { data, error } = await supabaseClient.from('purchase_records').select('*').order('purchase_date', { ascending: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    purchaseRecords = data || [];
+    renderPurchaseRecords();
+  } catch (e) {
+    cloud('進貨紀錄讀取失敗：' + e.message, false);
+  }
+}
+
+function renderPurchaseRecords() {
+  const body = get('purchaseBody');
+  if (!body) return;
+
+  const selectedMonth = getSelectedPurchaseMonth();
+  const selectedLabel = monthLabelFromValue(selectedMonth);
+
+  const selectedRecords = (purchaseRecords || []).filter(r => {
+    const d = String(r.purchase_date || '').slice(0, 7);
+    return d === selectedMonth;
+  });
+
+  const selectedTotal = selectedRecords.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  const selectedMomo = selectedRecords
+    .filter(r => String(r.supplier_name || '').toUpperCase().includes('MOMO'))
+    .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
+  const monthLabel = get('purchaseMonthLabel');
+  if (monthLabel) monthLabel.textContent = `${selectedLabel}訂貨金額`;
+
+  const selectedTotalBox = get('selectedMonthPurchaseTotal');
+  if (selectedTotalBox) selectedTotalBox.textContent = money(selectedTotal);
+
+  const selectedMomoBox = get('selectedMonthMomoTotal');
+  if (selectedMomoBox) selectedMomoBox.textContent = `${money(selectedMomo)} / NT$12,000`;
+
+  const selectedMomoNote = get('selectedMonthMomoNote');
+  if (selectedMomoNote) {
+    const left = Math.max(0, 12000 - selectedMomo);
+    selectedMomoNote.textContent = selectedMomo >= 12000 ? `${selectedLabel} MOMO 已達標` : `${selectedLabel} MOMO 尚差 ${money(left)}`;
+  }
+
+  // 舊卡片同步顯示所選月份，避免 7月還看到6月數字
+  const totalBox = get('monthPurchaseTotal');
+  if (totalBox) totalBox.textContent = money(selectedTotal);
+
+  const momoText = get('momoProgressText');
+  if (momoText) momoText.textContent = `${money(selectedMomo)} / NT$12,000`;
+
+  const momoNote = get('momoProgressNote');
+  if (momoNote) {
+    const left = Math.max(0, 12000 - selectedMomo);
+    momoNote.textContent = selectedMomo >= 12000 ? `${selectedLabel} MOMO 已達標` : `${selectedLabel}尚差 ${money(left)}，目前 ${Math.round(selectedMomo/12000*100)}%`;
+  }
+
+  const momoBar = get('momoProgressBar');
+  if (momoBar) momoBar.style.width = `${Math.min(100, Math.round(selectedMomo/12000*100))}%`;
+
+  body.innerHTML = (purchaseRecords || []).map((r, i) => `
+    <tr>
+      <td>${r.purchase_date || ''}</td>
+      <td>${r.supplier_name || ''}</td>
+      <td><b>${money(r.amount)}</b></td>
+      <td>${r.note || ''}</td>
+      <td><button class="btn small red" onclick="deletePurchaseRecord(${i})">刪除</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" class="subtle">尚未建立進貨紀錄</td></tr>';
+}
+
+async function addPurchaseRecord() {
+  const supplier_name = val('purchaseSupplier');
+  const amount = Number(val('purchaseAmount')) || 0;
+  const rawDate = val('purchaseDate') || todayISO();
+  const purchase_date = normalizePurchaseDate(rawDate);
+  if (!purchase_date) { alert('日期格式請輸入 2026-06-09 或 2026/06/09'); return; }
+  const note = val('purchaseNote');
+  if (!supplier_name) { alert('請選擇供應商'); return; }
+  if (amount <= 0) { alert('請輸入正確金額'); return; }
+
+  const { error } = await supabaseClient.from('purchase_records').insert({ supplier_name, amount, purchase_date, note });
+  if (error) { alert('新增進貨紀錄失敗：' + error.message); return; }
+
+  set('purchaseAmount',''); set('purchaseNote','');
+  get('purchaseDate').value = todayISO();
+  if (get('purchaseMonthFilter')) get('purchaseMonthFilter').value = currentMonthValue();
+  await loadPurchaseRecords();
+  cloud('✅ 進貨紀錄已儲存', true);
+}
+
+async function deletePurchaseRecord(i) {
+  const r = purchaseRecords[i];
+  if (!r || !confirm(`確定刪除 ${r.supplier_name} ${money(r.amount)}？`)) return;
+  const { error } = await supabaseClient.from('purchase_records').delete().eq('id', r.id);
+  if (error) { alert('刪除進貨紀錄失敗：' + error.message); return; }
+  await loadPurchaseRecords();
+}
+
+
+// 啟動
+supabaseClient
+  .channel('tasks-changes')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadTasks())
+  .subscribe();
+
+loadTasks();
+loadSuppliers();
+loadPurchaseRecords();
+renderTodaySchedule();
+loadDailyTasks();
+if (get('purchaseDate')) get('purchaseDate').value = todayISO();
+updateAll();
+</script>
+</body>
+</html>
+<!-- V6.5.2.2.2 修正：
+  1. 補回 </title> 與 <body> 結構
+  2. 補回 Supabase JS 與 XLSX (SheetJS) CDN
+  3. 補回所有 CSS 樣式
+  4. VVIP 公式 /0.844 改回 /0.84（對齊 README）
+  5. 整份排版成多行可讀格式
+-->
