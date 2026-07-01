@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V7.2.2 月份留底版</title>
+<title>Bubu AI V7.2 救援版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -192,8 +192,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V7.2.2 月份留底版</h1>
-    <p>保留24小時自動清理；新增今日排程、營運成績單、訂貨金額獨立統計。</p>
+    <h1>Bubu AI V7.2 救援版</h1>
+    <p>保留48小時自動清理；新增今日排程打勾、daily_tasks 紀錄、供應商中心移到底部。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -201,7 +201,7 @@
 
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>📅 今日排程中心 V7.2.1</h2>
+    <h2>📅 今日排程中心 V7.0.2</h2>
     <span id="scheduleDateText" class="subtle">排程載入中...</span>
   </div>
   <div id="scheduleBody" class="scheduleGrid"></div>
@@ -338,54 +338,19 @@
 
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>💰 本月訂貨金額總覽</h2>
-    <span class="subtle">依 purchase_records 自動統計</span>
-  </div>
-  <div id="purchaseSummary" class="preview" style="min-height:60px;margin-top:10px">本月尚未登錄訂貨金額。</div>
-</div>
-
-
-<div class="card" style="margin-top:16px">
-  <div class="sectionTitle">
-    <h2>💰 訂貨金額總覽</h2>
-    <span class="subtle">依 purchase_records 的日期自動統計，歷史月份會留底</span>
-  </div>
-  <div class="grid2">
-    <div>
-      <label>查看月份</label>
-      <input id="purchaseMonthFilter" type="month" onchange="renderPurchaseRecords()"/>
-    </div>
-  </div>
-  <div class="statGrid" style="margin-top:10px">
-    <div class="statBox">
-      <div class="label" id="purchaseMonthLabel">本月訂貨金額</div>
-      <div id="selectedMonthPurchaseTotal" class="num">NT$0</div>
-      <div class="subtle">只統計所選月份，不會吃到上個月</div>
-    </div>
-    <div class="statBox">
-      <div class="label">MOMO 所選月份進度</div>
-      <div id="selectedMonthMomoTotal" class="num">NT$0 / NT$12,000</div>
-      <div class="subtle" id="selectedMonthMomoNote">依所選月份自動計算</div>
-    </div>
-  </div>
-</div>
-
-
-<div class="card" style="margin-top:16px">
-  <div class="sectionTitle">
     <h2>⑤ 供應商中心 V6.8（設定區）</h2>
     <span class="subtle">低頻設定區：供應商代碼、進貨紀錄、MOMO低消追蹤</span>
   </div>
 
   <div class="statGrid">
     <div class="statBox">
-      <div class="label"><span id="momoMonthLabel">本月</span> MOMO 低消進度</div>
+      <div class="label">6月 MOMO 低消進度</div>
       <div id="momoProgressText" class="num">NT$0 / NT$12,000</div>
       <div class="progressWrap"><div id="momoProgressBar" class="progressBar"></div></div>
       <div id="momoProgressNote" class="subtle" style="margin-top:6px">尚未登錄進貨。</div>
     </div>
     <div class="statBox">
-      <div class="label"><span id="purchaseMonthLabel">本月</span>進貨總額</div>
+      <div class="label">6月進貨總額</div>
       <div id="monthPurchaseTotal" class="num">NT$0</div>
       <div class="subtle">依 purchase_records 自動加總</div>
     </div>
@@ -677,7 +642,7 @@ async function loadTasks() {
     const { data, error } = await supabaseClient.from('tasks').select('*').order('created_at', { ascending: false });
     if (error) throw error;
 
-    // V6.7：已同步商品保留24小時後自動刪除
+    // V6.7：已同步商品保留48小時後自動刪除
     // 只有 done=true 才會刪；未同步商品永遠不自動刪。
     const now = Date.now();
     const keepRows = [];
@@ -689,7 +654,7 @@ async function loadTasks() {
 
       const syncedTime = content.syncedAt || r.created_at;
       const ageMs = syncedTime ? (now - new Date(syncedTime).getTime()) : 0;
-      const shouldDelete = content.done === true && ageMs > 24 * 60 * 60 * 1000;
+      const shouldDelete = content.done === true && ageMs > 48 * 60 * 60 * 1000;
 
       if (shouldDelete) deleteIds.push(r.id);
       else keepRows.push(r);
@@ -751,7 +716,7 @@ async function toggleTask(i) {
   const newDone = !t.done;
   const u = { ...t, done: newDone };
 
-  // V6.7：按「已同步」時記錄同步時間，24小時自動清理會以此為基準。
+  // V6.7：按「已同步」時記錄同步時間，48小時自動清理會以此為基準。
   if (newDone) u.syncedAt = new Date().toISOString();
   else delete u.syncedAt;
 
@@ -773,7 +738,7 @@ async function deleteTask(i) {
 function renderTasks() {
   get('taskBody').innerHTML = tasks.map((t, i) => `
     <tr>
-      <td><span class="pill ${t.done ? 'done' : ''}">${t.done ? '✅ 已同步' : '⏳ 未同步'}</span>${t.done && t.syncedAt ? `<br><span style="font-size:11px;color:#94a3b8">約${Math.max(0, Math.ceil((24*60*60*1000 - (Date.now()-new Date(t.syncedAt).getTime()))/3600000))}小時後清理</span>` : ''}</td>
+      <td><span class="pill ${t.done ? 'done' : ''}">${t.done ? '✅ 已同步' : '⏳ 未同步'}</span>${t.done && t.syncedAt ? `<br><span style="font-size:11px;color:#94a3b8">約${Math.max(0, Math.ceil((48*60*60*1000 - (Date.now()-new Date(t.syncedAt).getTime()))/3600000))}小時後清理</span>` : ''}</td>
       <td>${t.title}<br><span style="font-size:12px;color:#64748b">${t.time || ''}${t.priceNote ? '<br>備註：' + t.priceNote : ''}</span></td>
       <td>${t.retail || ''}</td>
       <td><b>${t.vip || ''}</b></td>
@@ -1197,55 +1162,24 @@ async function toggleDailyTask(dateStr, category, taskName, completed) {
 function renderMonthlyTaskSummary() {
   const box = get('monthlyTaskSummary');
   if (!box) return;
-  const dateStr = getTodayTaskDate();
-  const monthLabel = `${new Date().getMonth() + 1}月`;
-  const todayItems = getScheduleForDate(dateStr);
-  const todayDone = todayItems.filter(item => isTaskCompleted(dateStr, item.category, item.task_name)).length;
   const completed = dailyTasks.filter(t => t.completed === true);
-
-  if (!completed.length) {
-    box.textContent = `${monthLabel}尚未完成任何排程項目。
-今日完成率：${todayDone}/${todayItems.length}
-先打勾「回客人／出貨／巡查」後，這裡就會開始累計。`;
-    return;
-  }
+  if (!completed.length) { box.textContent = '本月尚未完成任何排程項目。'; return; }
 
   const byName = {};
   completed.forEach(t => {
     const key = `${t.category}｜${t.task_name}`;
     byName[key] = (byName[key] || 0) + 1;
   });
-  box.textContent = `${monthLabel}營運成績單
-今日完成率：${todayDone}/${todayItems.length}
-
-` + Object.entries(byName)
+  box.textContent = Object.entries(byName)
     .sort((a,b)=>b[1]-a[1])
     .map(([k,c]) => `${k}：${c}次`)
-    .join('
-');
+    .join('\n');
 }
+
 
 // ─────────────────────────────
 // V6.8 供應商中心
 // ─────────────────────────────
-
-
-function currentMonthValue() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-}
-
-function getSelectedPurchaseMonth() {
-  const el = get('purchaseMonthFilter');
-  if (!el) return currentMonthValue();
-  if (!el.value) el.value = currentMonthValue();
-  return el.value;
-}
-
-function monthLabelFromValue(v) {
-  const [y, m] = String(v || currentMonthValue()).split('-');
-  return `${Number(m)}月`;
-}
 
 function todayISO() {
   const d = new Date();
@@ -1377,55 +1311,27 @@ function renderPurchaseRecords() {
   const body = get('purchaseBody');
   if (!body) return;
 
-  const selectedMonth = getSelectedPurchaseMonth();
-  const selectedLabel = monthLabelFromValue(selectedMonth);
-
-  const selectedRecords = (purchaseRecords || []).filter(r => {
-    const d = String(r.purchase_date || '').slice(0, 7);
-    return d === selectedMonth;
-  });
-
-  const selectedTotal = selectedRecords.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-  const selectedMomo = selectedRecords
-    .filter(r => String(r.supplier_name || '').toUpperCase().includes('MOMO'))
+  const start = monthStartISO();
+  const end = monthEndISO();
+  const monthRows = purchaseRecords.filter(r => (r.purchase_date || '').slice(0,10) >= start && (r.purchase_date || '').slice(0,10) <= end);
+  const monthTotal = monthRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  const momoTotal = monthRows
+    .filter(r => String(r.supplier_name || '').toLowerCase().includes('momo'))
     .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
-  const monthLabel = get('purchaseMonthLabel');
-  if (monthLabel) monthLabel.textContent = `${selectedLabel}訂貨金額`;
+  get('monthPurchaseTotal').textContent = money(monthTotal);
 
-  const selectedTotalBox = get('selectedMonthPurchaseTotal');
-  if (selectedTotalBox) selectedTotalBox.textContent = money(selectedTotal);
+  const target = 12000;
+  const pct = Math.min(100, Math.round(momoTotal / target * 100));
+  get('momoProgressText').textContent = `${money(momoTotal)} / ${money(target)}`;
+  get('momoProgressBar').style.width = pct + '%';
+  get('momoProgressNote').textContent = momoTotal >= target ? '✅ MOMO 本月低消已達成' : `尚差 ${money(target - momoTotal)}，目前 ${pct}%`;
 
-  const selectedMomoBox = get('selectedMonthMomoTotal');
-  if (selectedMomoBox) selectedMomoBox.textContent = `${money(selectedMomo)} / NT$12,000`;
-
-  const selectedMomoNote = get('selectedMonthMomoNote');
-  if (selectedMomoNote) {
-    const left = Math.max(0, 12000 - selectedMomo);
-    selectedMomoNote.textContent = selectedMomo >= 12000 ? `${selectedLabel} MOMO 已達標` : `${selectedLabel} MOMO 尚差 ${money(left)}`;
-  }
-
-  // 舊卡片同步顯示所選月份，避免 7月還看到6月數字
-  const totalBox = get('monthPurchaseTotal');
-  if (totalBox) totalBox.textContent = money(selectedTotal);
-
-  const momoText = get('momoProgressText');
-  if (momoText) momoText.textContent = `${money(selectedMomo)} / NT$12,000`;
-
-  const momoNote = get('momoProgressNote');
-  if (momoNote) {
-    const left = Math.max(0, 12000 - selectedMomo);
-    momoNote.textContent = selectedMomo >= 12000 ? `${selectedLabel} MOMO 已達標` : `${selectedLabel}尚差 ${money(left)}，目前 ${Math.round(selectedMomo/12000*100)}%`;
-  }
-
-  const momoBar = get('momoProgressBar');
-  if (momoBar) momoBar.style.width = `${Math.min(100, Math.round(selectedMomo/12000*100))}%`;
-
-  body.innerHTML = (purchaseRecords || []).map((r, i) => `
+  body.innerHTML = purchaseRecords.slice(0, 30).map((r, i) => `
     <tr>
       <td>${r.purchase_date || ''}</td>
       <td>${r.supplier_name || ''}</td>
-      <td><b>${money(r.amount)}</b></td>
+      <td><b>${money(r.amount || 0)}</b></td>
       <td>${r.note || ''}</td>
       <td><button class="btn small red" onclick="deletePurchaseRecord(${i})">刪除</button></td>
     </tr>`).join('') || '<tr><td colspan="5" class="subtle">尚未建立進貨紀錄</td></tr>';
@@ -1446,7 +1352,6 @@ async function addPurchaseRecord() {
 
   set('purchaseAmount',''); set('purchaseNote','');
   get('purchaseDate').value = todayISO();
-  if (get('purchaseMonthFilter')) get('purchaseMonthFilter').value = currentMonthValue();
   await loadPurchaseRecords();
   cloud('✅ 進貨紀錄已儲存', true);
 }
