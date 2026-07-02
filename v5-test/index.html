@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V7.2 救援版</title>
+<title>Bubu AI V7.3 上架強化版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -186,14 +186,20 @@
   .taskItem input { width:auto; transform:scale(1.15); }
   .taskDoneText { color:#94a3b8; text-decoration:line-through; }
   .monthlyReview { margin-top:12px; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:12px; }
+
+  .checkPanel{margin-top:10px;padding:10px 12px;background:#0f172a;border:1px solid #334155;border-radius:10px}
+  .checkPanelTitle{font-size:13px;color:#fbbf24;font-weight:700;margin-bottom:6px}
+  .checkRow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .checkRow label{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;color:#cbd5e1}
+  .checkRow input{width:auto}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V7.2 救援版</h1>
-    <p>保留48小時自動清理；新增今日排程打勾、daily_tasks 紀錄、供應商中心移到底部。</p>
+    <h1>Bubu AI V7.3 上架強化版</h1>
+    <p>OpenAI穩定版；新增保養品標示勾選、商品名稱強化、市場價格聰明搜尋。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -287,6 +293,16 @@
       <input id="labelOrigin" value="韓國" oninput="updateAll()"/>
       <label>中文標籤｜使用方式 / 注意事項補充</label>
       <textarea id="labelUsage" oninput="updateAll()"></textarea>
+    </div>
+
+    <div id="importInfoBox" class="checkPanel hidden">
+      <div class="checkPanelTitle">保養品公開資訊勾選</div>
+      <div class="checkRow">
+        <label><input id="hasChineseLabel" type="checkbox" onchange="handleImportChecks();updateAll()"> 中文標籤</label>
+        <label><input id="hasPifFile" type="checkbox" onchange="handleImportChecks();updateAll()"> PIF文件</label>
+        <label><input id="isSeaShipping" type="checkbox" onchange="handleImportChecks();updateAll()"> 韓國海運</label>
+      </div>
+      <div class="subtle" style="margin-top:6px">只會在保養品分類顯示；服飾不會帶入這些文字。</div>
     </div>
 
     <div class="priceGrid">
@@ -438,6 +454,31 @@ function cleanText(v, mode = 'line') {
   return mode === 'space' ? t.replace(/\s+/g, ' ').trim() : t.replace(/\n{3,}/g, '\n\n').trim();
 }
 
+
+function handleImportChecks(){
+  const label=get('hasChineseLabel'), pif=get('hasPifFile'), sea=get('isSeaShipping');
+  if(!label) return;
+  if((pif&&pif.checked)||(sea&&sea.checked)) label.checked=true;
+}
+function getImportNotes(){
+  if(detectCategory()!=='skincare') return '';
+  const hasLabel=get('hasChineseLabel')&&get('hasChineseLabel').checked;
+  const hasPif=get('hasPifFile')&&get('hasPifFile').checked;
+  const isSea=get('isSeaShipping')&&get('isSeaShipping').checked;
+  const notes=[];
+  if(hasPif) notes.push('✔ 本商品備有 PIF 文件及中文標示。');
+  else if(hasLabel) notes.push('✔ 本商品附中文標示。');
+  if(isSea) notes.push('✔ 韓國海運商品，約需等待 4–8 週。');
+  return notes.join('\n');
+}
+function composePublicCopy(copy){
+  const base=cleanText(copy||'');
+  const notes=getImportNotes();
+  if(!notes) return base;
+  if(!base) return notes;
+  return cleanText(base+'\n\n'+notes);
+}
+
 function detectCategory() {
   const s = val('category');
   return s !== 'auto' ? s : (parsedCategory || 'clothing');
@@ -494,6 +535,8 @@ function switchMode() {
   get('skincareFields').classList.toggle('hidden', !skin);
   get('skincareCostBox').classList.toggle('hidden', !skin);
   get('labelCard').classList.toggle('hidden', !skin);
+  if (get('importInfoBox')) get('importInfoBox').classList.toggle('hidden', !skin);
+  if (!skin) ['hasChineseLabel','hasPifFile','isSeaShipping'].forEach(id => { if (get(id)) get(id).checked = false; });
 }
 
 function updateAll() {
@@ -542,7 +585,7 @@ function updateAll() {
   switchMode();
   const vendor = val('vendorCode'), name = val('productName');
   const title = vendor && name && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : (name || '');
-  const copy = cleanText(currentCopy) || '文案生成中或尚未生成。';
+  const copy = composePublicCopy(currentCopy) || '文案生成中或尚未生成。';
   let full = '';
   if (p.cat === 'skincare') {
     const cap = val('capacity') || '依實際包裝標示';
@@ -577,7 +620,17 @@ async function parseVendor() {
     const res = await fetch('/api/parse-vendor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rawText, vendorCode: val('vendorCode'), selectedCategory: val('category'), mode: val('mode') })
+      body: JSON.stringify({
+        rawText,
+        vendorCode: val('vendorCode'),
+        selectedCategory: val('category'),
+        mode: val('mode'),
+        importOptions: {
+          hasChineseLabel: !!(get('hasChineseLabel') && get('hasChineseLabel').checked),
+          hasPifFile: !!(get('hasPifFile') && get('hasPifFile').checked),
+          isSeaShipping: !!(get('isSeaShipping') && get('isSeaShipping').checked)
+        }
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '解析失敗');
