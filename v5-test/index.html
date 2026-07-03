@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V7.4.1 進貨月份留底版</title>
+<title>Bubu AI V7.4.2 進貨月份修正版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -198,8 +198,8 @@
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V7.4.1 進貨月份留底版</h1>
-    <p>OpenAI穩定版；新增進貨月份查詢與月份Excel匯出。</p>
+    <h1>Bubu AI V7.4.2 進貨月份修正版</h1>
+    <p>OpenAI穩定版；修正6月進貨明細月份查詢與Excel匯出。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -1431,7 +1431,8 @@ async function addPurchaseRecord() {
 
   set('purchaseAmount',''); set('purchaseNote','');
   get('purchaseDate').value = todayISO();
-  await loadPurchaseRecords().then(() => refreshPurchaseMonthOptions());
+  await loadPurchaseRecords();
+reloadPurchaseRecordsForArchive();
   cloud('✅ 進貨紀錄已儲存', true);
 }
 
@@ -1441,6 +1442,189 @@ async function deletePurchaseRecord(i) {
   const { error } = await supabaseClient.from('purchase_records').delete().eq('id', r.id);
   if (error) { alert('刪除進貨紀錄失敗：' + error.message); return; }
   await loadPurchaseRecords();
+reloadPurchaseRecordsForArchive();
+}
+
+
+
+// V7.4.2 進貨月份留底 / 匯出：直接從 Supabase 拉資料，避免月份區塊空白
+async function reloadPurchaseRecordsForArchive() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('purchase_records')
+      .select('*')
+      .order('purchase_date', { ascending: false });
+
+    if (error) throw error;
+    purchaseRecords = data || [];
+    refreshPurchaseMonthOptions();
+    renderPurchaseRecords && renderPurchaseRecords();
+  } catch (e) {
+    console.error('進貨月份資料讀取失敗', e);
+    const box = get('purchaseMonthSupplierSummary');
+    if (box) box.textContent = '進貨月份資料讀取失敗：' + e.message;
+  }
+}
+
+function normalizePurchaseDate(dateValue) {
+  const raw = String(dateValue || '').trim();
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  if (/^\d{4}\/\d{1,2}\/\d{1,2}/.test(raw)) {
+    const parts = raw.split(/[\/\s]/).filter(Boolean);
+    const y = parts[0];
+    const m = String(parts[1]).padStart(2, '0');
+    const d = String(parts[2]).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const dt = new Date(raw);
+  if (!isNaN(dt.getTime())) {
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+  return raw.slice(0, 10);
+}
+
+function purchaseMonthKey(dateStr) {
+  const d = normalizePurchaseDate(dateStr);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return '';
+  return d.slice(0, 7);
+}
+
+function getPurchaseMonths() {
+  const set = new Set();
+  (purchaseRecords || []).forEach(r => {
+    const key = purchaseMonthKey(r.purchase_date || r.created_at);
+    if (key) set.add(key);
+  });
+
+  const now = new Date();
+  set.add(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+
+  return Array.from(set).sort().reverse();
+}
+
+function refreshPurchaseMonthOptions() {
+  const sel = get('purchaseMonthSelect');
+  if (!sel) return;
+
+  const old = sel.value;
+  const months = getPurchaseMonths();
+
+  sel.innerHTML = months.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  if (old && months.includes(old)) sel.value = old;
+  else if (months.includes('2026-06')) sel.value = '2026-06';
+  else if (months.length) sel.value = months[0];
+
+  renderPurchaseMonthArchive();
+}
+
+function getSupplierTypeByName(name) {
+  const s = (suppliers || []).find(x => (x.supplier_name || '') === name);
+  return s ? (s.supplier_type || '未分類') : '未分類';
+}
+
+function getPurchaseRowsByMonth(monthKey) {
+  return (purchaseRecords || [])
+    .filter(r => purchaseMonthKey(r.purchase_date || r.created_at) === monthKey)
+    .sort((a, b) => normalizePurchaseDate(a.purchase_date || a.created_at).localeCompare(normalizePurchaseDate(b.purchase_date || b.created_at)));
+}
+
+function renderPurchaseMonthArchive() {
+  const sel = get('purchaseMonthSelect');
+  if (!sel) return;
+
+  const monthKey = sel.value;
+  const rows = getPurchaseRowsByMonth(monthKey);
+  const total = rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
+  if (get('purchaseMonthTotal')) get('purchaseMonthTotal').textContent = money(total);
+
+  const bySupplier = {};
+  rows.forEach(r => {
+    const name = r.supplier_name || '未填供應商';
+    bySupplier[name] = (bySupplier[name] || 0) + (Number(r.amount) || 0);
+  });
+
+  const summary = Object.entries(bySupplier)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, amount]) => `${name}：${money(amount)}`)
+    .join('\n');
+
+  if (get('purchaseMonthSupplierSummary')) {
+    get('purchaseMonthSupplierSummary').textContent =
+      rows.length
+        ? `📊 ${monthKey} 供應商加總\n${summary}`
+        : `${monthKey} 尚無進貨資料。`;
+  }
+
+  const body = get('purchaseMonthBody');
+  if (body) {
+    body.innerHTML = rows.map(r => `
+      <tr>
+        <td>${normalizePurchaseDate(r.purchase_date || r.created_at)}</td>
+        <td>${r.supplier_name || ''}</td>
+        <td>${getSupplierTypeByName(r.supplier_name || '')}</td>
+        <td>${money(r.amount || 0)}</td>
+        <td>${r.note || ''}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" class="subtle">該月份尚無進貨資料</td></tr>';
+  }
+}
+
+function exportPurchaseMonthExcel() {
+  if (typeof XLSX === 'undefined') {
+    alert('Excel匯出模組尚未載入，請重新整理後再試');
+    return;
+  }
+
+  const sel = get('purchaseMonthSelect');
+  const monthKey = sel ? sel.value : '';
+  if (!monthKey) { alert('請先選擇月份'); return; }
+
+  const rows = getPurchaseRowsByMonth(monthKey);
+  if (!rows.length) {
+    alert(`${monthKey} 沒有進貨資料可以匯出`);
+    return;
+  }
+
+  const total = rows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  const bySupplier = {};
+  rows.forEach(r => {
+    const name = r.supplier_name || '未填供應商';
+    bySupplier[name] = (bySupplier[name] || 0) + (Number(r.amount) || 0);
+  });
+
+  const aoa = [
+    [`${monthKey} 進貨明細`],
+    ['月份', monthKey],
+    ['總進貨金額', total],
+    [],
+    ['供應商加總'],
+    ['供應商', '金額']
+  ];
+
+  Object.entries(bySupplier)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([name, amount]) => aoa.push([name, amount]));
+
+  aoa.push([]);
+  aoa.push(['日期', '供應商', '類型', '金額', '備註']);
+
+  rows.forEach(r => {
+    aoa.push([
+      normalizePurchaseDate(r.purchase_date || r.created_at),
+      r.supplier_name || '',
+      getSupplierTypeByName(r.supplier_name || ''),
+      Number(r.amount) || 0,
+      r.note || ''
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '進貨明細');
+  XLSX.writeFile(wb, `Bubu進貨明細_${monthKey}.xlsx`);
 }
 
 
