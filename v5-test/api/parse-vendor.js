@@ -20,21 +20,9 @@ function stripVendorCodeFromStart(text, vendorCode){
   return s;
 }
 function extractProductCode(rawText,vendorCode){
-  const raw=stripVendorCodeFromStart(rawText,vendorCode).replace(/[＄]/g,'$').replace(/[－]/g,'-');
-  const costInline=/(?:成本|拿貨|進價|批價|批)\s*[:=]?\s*\d{2,6}/i;
-  const lines=raw.split(/\n/).map(s=>s.trim()).filter(Boolean);
-  for(const line of lines.slice(0,8)){
-    const clean=line.replace(costInline,' ').replace(/(?:P|C|S|B|W|NT\$?|台幣|\$)\s*\d{2,6}/ig,' ').replace(/\s+/g,' ').trim();
-    const tokens=clean.match(/#[A-Za-z0-9][A-Za-z0-9\-]*|\b[A-Z]{1,4}\d{1,4}-\d{2,6}[A-Z]?\b|\b[A-Z]{1,4}\d{3,8}[A-Z]?\b|\b\d{2,6}[A-Z]?\b/g)||[];
-    for(const token of tokens){
-      const code=String(token).replace(/\s+/g,'').trim();
-      if(!code)continue;
-      if(/^(?:P|C|S|B|W|NT\$?|\$)\d{2,6}$/i.test(code))continue;
-      if(/^(202[0-9]|19[0-9]{2})$/.test(code))continue;
-      if(/^\d{2,3}$/.test(code)&&/(腰|胸|臀|長|衣長|褲長|尺寸|cm|公分)/.test(line))continue;
-      return code;
-    }
-  }
+  const raw=stripVendorCodeFromStart(rawText,vendorCode);
+  const patterns=[/#\s*[A-Za-z0-9][A-Za-z0-9\-]*/g,/\b[A-Z]{1,4}\d{1,4}[-－]\d{2,6}[A-Z]?\b/g,/\b[A-Z]{1,4}\d{3,8}[A-Z]?\b/g,/\b\d{3,6}[A-Z]?\b/g];
+  for(const re of patterns){ const m=raw.match(re); if(m&&m.length){ const code=String(m[0]).replace(/\s+/g,'').replace('－','-').trim(); if(!/^(202[0-9]|19[0-9]{2})$/.test(code)) return code; } }
   return '';
 }
 function extractHardCost(rawText){
@@ -50,19 +38,7 @@ function extractHardCost(rawText){
 function extractSizeText(rawText){
   const lines=String(rawText||'').split(/\n/).map(s=>s.trim()).filter(Boolean);
   const sizeWords=/(肩寬|肩宽|肩|胸寬|胸宽|胸|衣長|衣长|長|长|袖長|袖长|袖|腰圍|腰围|腰|臀圍|臀围|臀|褲長|裤长|褲|裤|裙長|裙长|下擺|下摆|大腿|腿圍|腿围|cm|CM|公分|尺碼|尺寸|SIZE|Size|size)/;
-  const rows=[];
-  for(const line of lines){
-    if(!/\d/.test(line))continue;
-    if(sizeWords.test(line)){
-      let cleaned=line.replace(/^尺寸\s*[:：]?\s*/,'').replace(/^尺碼\s*[:：]?\s*/,'').replace(/^SIZE\s*[:：]?\s*/i,'').trim();
-      if(cleaned.length<=80)rows.push(cleaned);
-    }
-  }
-  if(rows.length===1){
-    const parts=rows[0].match(/(?:肩寬|肩宽|肩|胸寬|胸宽|胸|衣長|衣长|長|长|袖長|袖长|袖|腰圍|腰围|腰|臀圍|臀围|臀|褲長|裤长|褲|裤|裙長|裙长|下擺|下摆|大腿|腿圍|腿围)\s*\d+(?:[-~－–]\d+)?(?:\s*cm)?/g);
-    if(parts&&parts.length>=2)return parts.join('\n');
-  }
-  return rows.join('\n').slice(0,1200);
+  return lines.filter(line=>sizeWords.test(line)&&/\d/.test(line)).join('\n').slice(0,1200);
 }
 function cleanAiName(name, code){
   let s=String(name||'').trim();
@@ -273,9 +249,7 @@ ${externalInfo || "未取得外部搜尋資料"}`;
 
     const finalProductName = composeProductName(rawText, vendorCode, parsed.productName || "");
     const finalCost = hardCost || Number(parsed.cost) || 0;
-    let aiSizeText = String(parsed.sizeText || "").trim();
-    if (aiSizeText.length > 120 || /【|內容|超高|重點|價格甜|錯過|快收|文案|商品/.test(aiSizeText)) aiSizeText = "";
-    const finalSizeText = hardSizeText || aiSizeText || "";
+    const finalSizeText = hardSizeText || parsed.sizeText || "";
 
     return res.status(200).json({
       productName: finalProductName || "",
