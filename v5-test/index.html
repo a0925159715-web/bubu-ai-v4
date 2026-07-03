@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Bubu AI V7.3 上架強化版</title>
+<title>Bubu AI V7.4 營運排程修正版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -192,14 +192,20 @@
   .checkRow{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
   .checkRow label{display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px;color:#cbd5e1}
   .checkRow input{width:auto}
+
+  .statusPill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:700}
+  .status-active{background:#10b981;color:#fff}
+  .status-backup{background:#f59e0b;color:#1e293b}
+  .status-paused{background:#64748b;color:#fff}
+  .status-retired{background:#ef4444;color:#fff}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div>
-    <h1>Bubu AI V7.3 上架強化版</h1>
-    <p>OpenAI穩定版；新增保養品標示勾選、商品名稱強化、市場價格聰明搜尋。</p>
+    <h1>Bubu AI V7.4 營運排程修正版</h1>
+    <p>OpenAI穩定版；AI文案硬抓修正、24小時清理、供應商維護與備案排程。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
@@ -211,6 +217,17 @@
     <span id="scheduleDateText" class="subtle">排程載入中...</span>
   </div>
   <div id="scheduleBody" class="scheduleGrid"></div>
+  <div class="monthlyReview" style="margin-top:12px">
+    <div class="sectionTitle">
+      <h2 style="margin:0">➕ 今日臨時巡查</h2>
+      <span class="subtle">備案 / 其他廠商可臨時加入今日成績單</span>
+    </div>
+    <div class="grid2">
+      <div><label>供應商</label><select id="tempTaskSupplier"></select></div>
+      <div><label>類型</label><select id="tempTaskCategory"><option value="服飾">服飾</option><option value="保養品巡查">保養品巡查</option><option value="每日必做">每日必做</option><option value="其他">其他</option></select></div>
+    </div>
+    <button class="btn small teal" onclick="addTempDailyTask()">＋ 加入今日巡查</button>
+  </div>
   <div class="monthlyReview">
     <div class="sectionTitle">
       <h2 style="margin:0">📊 營運成績單</h2>
@@ -354,8 +371,8 @@
 
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>⑤ 供應商中心 V6.8（設定區）</h2>
-    <span class="subtle">低頻設定區：供應商代碼、進貨紀錄、MOMO低消追蹤</span>
+    <h2>⑤ 供應商維護中心 V7.4</h2>
+    <span class="subtle">供應商狀態、代碼備註、備案/淘汰、進貨紀錄</span>
   </div>
 
   <div class="statGrid">
@@ -373,23 +390,26 @@
     <div class="statBox">
       <div class="label">供應商資料數</div>
       <div id="supplierCount" class="num">0</div>
-      <div class="subtle">服飾代碼＋保養品供應商</div>
+      <div class="subtle">啟用＋備案＋暫停＋淘汰</div>
     </div>
   </div>
 
   <div class="grid">
     <div class="card" style="background:#0f172a">
-      <h2>👕 服飾代碼 / 供應商對照</h2>
+      <h2>🧭 供應商維護中心</h2>
       <div class="grid2">
-        <div><label>代碼</label><input id="supplierCode" placeholder="例如 CA / DA / EA"/></div>
-        <div><label>供應商名稱</label><input id="supplierName" placeholder="例如 A米格"/></div>
+        <div><label>供應商名稱</label><input id="supplierName" placeholder="例如 宜琳 / MC COKA / 拼多多"/></div>
+        <div><label>代碼備註</label><input id="supplierCode" placeholder="例如 CE / MC / CA、DA、EA"/></div>
         <div><label>類型</label><select id="supplierType"><option value="服飾">服飾</option><option value="保養品">保養品</option><option value="生活用品">生活用品</option><option value="其他">其他</option></select></div>
+        <div><label>狀態</label><select id="supplierStatus"><option value="啟用">啟用</option><option value="備案">備案</option><option value="暫停">暫停</option><option value="淘汰">淘汰</option></select></div>
       </div>
-      <button class="btn small teal" onclick="addSupplier()">➕ 新增供應商對照</button>
+      <label>備註</label>
+      <input id="supplierNote" placeholder="例如：款式不穩 / 有空再巡 / 目前主力"/>
+      <button class="btn small teal" onclick="addSupplier()">➕ 新增 / 更新供應商</button>
       <button class="btn small gray" onclick="seedDefaultSuppliers()">⚡ 載入預設供應商</button>
       <div style="overflow-x:auto;margin-top:10px">
-        <table class="miniTable"><thead><tr><th>代碼</th><th>供應商</th><th>類型</th><th>動作</th></tr></thead><tbody id="supplierBody"></tbody></table>
-      </div>
+        <table class="miniTable"><thead><tr><th>供應商</th><th>代碼備註</th><th>類型</th><th>狀態</th><th>備註</th><th>動作</th></tr></thead><tbody id="supplierBody"></tbody></table>
+      </div></div>
     </div>
 
     <div class="card" style="background:#0f172a">
@@ -695,7 +715,7 @@ async function loadTasks() {
     const { data, error } = await supabaseClient.from('tasks').select('*').order('created_at', { ascending: false });
     if (error) throw error;
 
-    // V6.7：已同步商品保留48小時後自動刪除
+    // V6.7：已同步商品保留24小時後自動刪除
     // 只有 done=true 才會刪；未同步商品永遠不自動刪。
     const now = Date.now();
     const keepRows = [];
@@ -707,7 +727,7 @@ async function loadTasks() {
 
       const syncedTime = content.syncedAt || r.created_at;
       const ageMs = syncedTime ? (now - new Date(syncedTime).getTime()) : 0;
-      const shouldDelete = content.done === true && ageMs > 48 * 60 * 60 * 1000;
+      const shouldDelete = content.done === true && ageMs > 24 * 60 * 60 * 1000;
 
       if (shouldDelete) deleteIds.push(r.id);
       else keepRows.push(r);
@@ -769,7 +789,7 @@ async function toggleTask(i) {
   const newDone = !t.done;
   const u = { ...t, done: newDone };
 
-  // V6.7：按「已同步」時記錄同步時間，48小時自動清理會以此為基準。
+  // V6.7：按「已同步」時記錄同步時間，24小時自動清理會以此為基準。
   if (newDone) u.syncedAt = new Date().toISOString();
   else delete u.syncedAt;
 
@@ -791,7 +811,7 @@ async function deleteTask(i) {
 function renderTasks() {
   get('taskBody').innerHTML = tasks.map((t, i) => `
     <tr>
-      <td><span class="pill ${t.done ? 'done' : ''}">${t.done ? '✅ 已同步' : '⏳ 未同步'}</span>${t.done && t.syncedAt ? `<br><span style="font-size:11px;color:#94a3b8">約${Math.max(0, Math.ceil((48*60*60*1000 - (Date.now()-new Date(t.syncedAt).getTime()))/3600000))}小時後清理</span>` : ''}</td>
+      <td><span class="pill ${t.done ? 'done' : ''}">${t.done ? '✅ 已同步' : '⏳ 未同步'}</span>${t.done && t.syncedAt ? `<br><span style="font-size:11px;color:#94a3b8">約${Math.max(0, Math.ceil((24*60*60*1000 - (Date.now()-new Date(t.syncedAt).getTime()))/3600000))}小時後清理</span>` : ''}</td>
       <td>${t.title}<br><span style="font-size:12px;color:#64748b">${t.time || ''}${t.priceNote ? '<br>備註：' + t.priceNote : ''}</span></td>
       <td>${t.retail || ''}</td>
       <td><b>${t.vip || ''}</b></td>
@@ -1416,6 +1436,23 @@ async function deletePurchaseRecord(i) {
   if (error) { alert('刪除進貨紀錄失敗：' + error.message); return; }
   await loadPurchaseRecords();
 }
+
+
+
+// V7.4 供應商維護中心覆寫
+function supplierStatusClass(status){return status==='啟用'?'status-active':status==='備案'?'status-backup':status==='淘汰'?'status-retired':'status-paused';}
+function getSupplierActiveList(type='服飾'){return (suppliers||[]).filter(s=>(s.supplier_type||'服飾')===type&&(s.status||'啟用')==='啟用');}
+function refreshTempSupplierOptions(){const sel=get('tempTaskSupplier'); if(!sel)return; const rows=(suppliers||[]).filter(s=>(s.status||'啟用')!=='淘汰'); sel.innerHTML=rows.map(s=>`<option value="${s.supplier_name}">${s.supplier_name}｜${s.supplier_type||'服飾'}｜${s.status||'啟用'}</option>`).join('')||'<option value="">尚無供應商</option>';}
+async function loadSuppliers(){try{const {data,error}=await supabaseClient.from('suppliers').select('*').order('id',{ascending:true}); if(error)throw error; suppliers=(data||[]).map(s=>({...s,status:s.status||(s.is_active===false?'暫停':'啟用'),note:s.note||''})); renderSuppliers(); refreshTempSupplierOptions();}catch(e){cloud('供應商讀取失敗：'+e.message,false);}}
+function renderSuppliers(){const body=get('supplierBody'); if(!body)return; if(get('supplierCount'))get('supplierCount').textContent=suppliers.length; body.innerHTML=(suppliers||[]).map((s,i)=>`<tr><td><b>${s.supplier_name||''}</b></td><td>${s.code||''}</td><td>${s.supplier_type||'服飾'}</td><td><span class="statusPill ${supplierStatusClass(s.status||'啟用')}">${s.status||'啟用'}</span></td><td>${s.note||''}</td><td style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn small gray" onclick="fillSupplierForm(${i})">編輯</button><button class="btn small" onclick="setSupplierStatus(${i},'啟用')">啟用</button><button class="btn small" onclick="setSupplierStatus(${i},'備案')">備案</button><button class="btn small gray" onclick="setSupplierStatus(${i},'暫停')">暫停</button><button class="btn small red" onclick="setSupplierStatus(${i},'淘汰')">淘汰</button><button class="btn small red" onclick="deleteSupplier(${i})">刪除</button></td></tr>`).join('')||'<tr><td colspan="6" class="subtle">尚未建立供應商</td></tr>';}
+function fillSupplierForm(i){const s=suppliers[i]; if(!s)return; set('supplierName',s.supplier_name||''); set('supplierCode',s.code||''); if(get('supplierType'))get('supplierType').value=s.supplier_type||'服飾'; if(get('supplierStatus'))get('supplierStatus').value=s.status||'啟用'; set('supplierNote',s.note||'');}
+async function addSupplier(){const supplier_name=val('supplierName'),code=val('supplierCode'),supplier_type=val('supplierType')||'服飾',status=val('supplierStatus')||'啟用',note=val('supplierNote'); if(!supplier_name){alert('請輸入供應商名稱');return;} const existing=suppliers.find(s=>(s.supplier_name||'')===supplier_name); let error; if(existing)({error}=await supabaseClient.from('suppliers').update({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'}).eq('id',existing.id)); else ({error}=await supabaseClient.from('suppliers').insert({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'})); if(error){alert('供應商儲存失敗：'+error.message);return;} set('supplierName','');set('supplierCode','');set('supplierNote',''); if(get('supplierStatus'))get('supplierStatus').value='啟用'; await loadSuppliers(); cloud('✅ 供應商已儲存',true);}
+async function setSupplierStatus(i,status){const s=suppliers[i]; if(!s)return; const {error}=await supabaseClient.from('suppliers').update({status,is_active:status!=='淘汰'}).eq('id',s.id); if(error){alert('狀態更新失敗：'+error.message);return;} await loadSuppliers();}
+async function deleteSupplier(i){const s=suppliers[i]; if(!s||!confirm(`確定刪除 ${s.supplier_name}？建議通常用「淘汰」保留紀錄。`))return; const {error}=await supabaseClient.from('suppliers').delete().eq('id',s.id); if(error){alert('刪除失敗：'+error.message);return;} await loadSuppliers();}
+async function seedDefaultSuppliers(){const defaults=[['CP','米亞','服飾','啟用',''],['CQ','Circle','服飾','啟用',''],['CZ','米淇','服飾','啟用',''],['CY','宜美','服飾','啟用',''],['MK','MK smile','服飾','啟用',''],['MC','MC COKA','服飾','啟用',''],['SD','SD批發','保養品','啟用',''],['CF','727','服飾','備案','可視情況巡查'],['CE','宜琳','服飾','啟用',''],['CC','APRIL','服飾','啟用',''],['CB','依玥','服飾','啟用',''],['PD','拼多多','服飾','備案','不固定排程，有空再巡']]; for(const [code,supplier_name,supplier_type,status,note] of defaults){if(!suppliers.find(s=>s.supplier_name===supplier_name)) await supabaseClient.from('suppliers').insert({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'});} await loadSuppliers(); cloud('✅ 已載入預設供應商',true);}
+function fallbackFashionForDate(dateStr){const active=getSupplierActiveList('服飾').map(s=>s.supplier_name).filter(Boolean); const all=active.length?active:['A米格','MC COKA','MK smile','米淇','衣玥','APRIL','宜琳','727','Circle','宜美','彎彎','H服飾','米亞']; const start=new Date('2026-06-15T00:00:00'),cur=new Date(dateStr+'T00:00:00'); const diff=Math.max(0,Math.floor((cur-start)/(24*60*60*1000))); return [all[(diff*2)%all.length],all[(diff*2+1)%all.length]];}
+function getScheduleForDate(dateStr){const activeNames=getSupplierActiveList('服飾').map(s=>s.supplier_name); let fashion=(fashionSchedule[dateStr]||fallbackFashionForDate(dateStr)).filter(name=>activeNames.length?activeNames.includes(name):true); const fb=fallbackFashionForDate(dateStr); fb.forEach(name=>{if(fashion.length<2&&!fashion.includes(name))fashion.push(name);}); fashion=fashion.slice(0,2); const items=[{category:'服飾',task_name:fashion[0]||'服飾巡查'},{category:'服飾',task_name:fashion[1]||'備案巡查'},{category:'保養品巡查',task_name:getSkincareForDate(dateStr)},{category:'每日必做',task_name:'回客人'}]; const day=new Date(dateStr+'T00:00:00').getDay(); if(day>=1&&day<=3)items.push({category:'每日必做',task_name:'出貨'}); const extra=(dailyTasks||[]).filter(t=>t.task_date===dateStr&&t.is_extra===true).map(t=>({category:t.category,task_name:t.task_name})); return [...items,...extra];}
+async function addTempDailyTask(){const dateStr=getTodayTaskDate(),task_name=val('tempTaskSupplier'),category=val('tempTaskCategory')||'其他'; if(!task_name){alert('請選擇供應商');return;} if(dailyTasks.some(t=>t.task_date===dateStr&&t.category===category&&t.task_name===task_name)){alert('今日已經有這個巡查項目');return;} const {error}=await supabaseClient.from('daily_tasks').insert({task_date:dateStr,category,task_name,completed:false,is_extra:true}); if(error){alert('新增臨時巡查失敗：'+error.message);return;} await loadDailyTasks(); cloud('✅ 已加入今日臨時巡查',true);}
 
 
 // 啟動
