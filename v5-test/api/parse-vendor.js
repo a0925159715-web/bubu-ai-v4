@@ -51,6 +51,65 @@ function composeProductName(rawText,vendorCode,aiName){
   return code?`${code} ${name}`.trim():name;
 }
 
+
+function isSkincareCategory(selectedCategory, parsedCategory, rawText) {
+  const s = String(selectedCategory || "").toLowerCase();
+  const p = String(parsedCategory || "").toLowerCase();
+  const raw = String(rawText || "").toLowerCase();
+  return s === "skincare" || p === "skincare" ||
+    /霜|乳|精華|安瓶|化妝水|防曬|隔離|洗面|潔面|面膜|眼霜|乳液|保養|彩妝|粉底|氣墊|唇|卸妝|面霜|cream|serum|ampoule|toner|sun|sunscreen|cleanser|mask|lotion|essence|eye|egf|fgf|ml/.test(raw);
+}
+
+function extractCapacity(rawText, aiCapacity) {
+  const raw = String(rawText || "");
+  const m = raw.match(/(\d+(?:\.\d+)?\s*(?:ml|mL|ML|g|G|克|片|入|顆|包|枚|oz|OZ))/);
+  if (m) return m[1].replace(/\s+/g, "");
+  return String(aiCapacity || "").trim();
+}
+
+function firstMeaningfulProductLine(rawText) {
+  const lines = String(rawText || "").split(/\n/).map(s => s.trim()).filter(Boolean);
+  for (let line of lines.slice(0, 10)) {
+    if (/^\$?\s*\d{2,6}$/.test(line)) continue;
+    if (/^[$＄]\s*\d+/.test(line)) continue;
+    if (/^(P|C|S|B|W)\s*\d{2,6}$/i.test(line)) continue;
+    if (/^(批|成本|拿貨|進價)\s*[:：=]?\s*\d{2,6}/.test(line)) continue;
+    if (/^(產品介紹|商品介紹|內容|重點|特色|說明|尺寸|顏色|容量|規格)\s*[:：]?$/i.test(line)) continue;
+    if (line.length < 2) continue;
+    return line;
+  }
+  return "";
+}
+
+function cleanSkincareProductName(rawText, aiName, hardCost, aiCapacity) {
+  let base = firstMeaningfulProductLine(rawText) || String(aiName || "");
+  base = String(base || "")
+    .replace(/[【】\[\]（）()]/g, " ")
+    .replace(/^韓國\s*/i, "")
+    .replace(/^正韓\s*/i, "")
+    .replace(/^\s*\d{2,6}\s+/, "")
+    .replace(/^\s*(?:P|C|S|B|W|NT\$?|台幣|\$)\s*\d{2,6}\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const cost = Number(hardCost) || 0;
+  if (cost > 0) base = base.replace(new RegExp("^" + cost + "\\s+"), "").trim();
+
+  const cap = extractCapacity(rawText, aiCapacity);
+  if (cap) {
+    const escaped = cap.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    base = base.replace(new RegExp("\\s*" + escaped + "\\s*", "ig"), " ").replace(/\s+/g, " ").trim();
+  }
+
+  base = base
+    .replace(/產品介紹.*$/i, "")
+    .replace(/CORE RETURN.*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return base;
+}
+
 async function callOpenAI({ prompt, json = false, temperature = 0.2, retries = 1 }) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
@@ -180,9 +239,10 @@ module.exports = async function handler(req, res) {
 }
 
 【商品名稱規則】
-1. productName 請回傳吸引人的中文商品名，中文名稱約 8～12 個字。
-2. 不要把廠商代碼 ${vendorCode || ""} 放進 productName。
-3. 不要把貨號/款號放進 productName；系統會另外強制保留並自動合併。
+1. productName 請回傳吸引人的商品名，中文名稱約 8～12 個字。
+2. 服飾：不要把廠商代碼 ${vendorCode || ""} 放進 productName；不要把貨號/款號放進 productName，系統會另外強制保留並自動合併。
+3. 保養品/彩妝/生活用品：完全不要使用服飾商品代碼邏輯，不要把任何前置數字、成本數字、容量數字放進 productName。
+4. 保養品名稱必須保留原品牌與原商品核心字，不可以自行換品牌、亂翻譯、亂改成不存在的名稱。
 4. 命名要像台灣韓貨網拍命名：好賣、好懂、好搜尋，不要直翻廠商原文。
 5. 可使用：韓系、法式、氣質、顯瘦、垂墜、冰感、涼感、修身、寬鬆、小香、質感、百搭、慵懶、簡約。
 6. 避免：爆款、超級無敵、頂級、天花板、神仙、必買、封神。
@@ -247,18 +307,32 @@ ${externalInfo || "未取得外部搜尋資料"}`;
 
     const parsed = await callOpenAI({ prompt, json: true, temperature: 0.25, retries: 1 });
 
-    const finalProductName = composeProductName(rawText, vendorCode, parsed.productName || "");
     const finalCost = hardCost || Number(parsed.cost) || 0;
-    const finalSizeText = hardSizeText || parsed.sizeText || "";
+    const finalCategory = parsed.category || selectedCategory || "clothing";
+    const isSkin = isSkincareCategory(selectedCategory, finalCategory, rawText);
+
+    let finalProductName = "";
+    let finalCapacity = parsed.capacity || "";
+
+    if (isSkin) {
+      finalCapacity = extractCapacity(rawText, parsed.capacity || parsed.specs || "");
+      finalProductName = cleanSkincareProductName(rawText, parsed.productName || "", finalCost, finalCapacity);
+    } else {
+      finalProductName = composeProductName(rawText, vendorCode, parsed.productName || "");
+    }
+
+    let aiSizeText = String(parsed.sizeText || "").trim();
+    if (aiSizeText.length > 120 || /【|內容|超高|重點|價格甜|錯過|快收|文案|商品/.test(aiSizeText)) aiSizeText = "";
+    const finalSizeText = hardSizeText || aiSizeText || "";
 
     return res.status(200).json({
       productName: finalProductName || "",
       colors: parsed.colors || "",
       specs: parsed.specs || "",
       sizeText: finalSizeText,
-      capacity: parsed.capacity || "",
+      capacity: finalCapacity || "",
       cost: finalCost,
-      category: parsed.category || "clothing",
+      category: isSkin ? "skincare" : (parsed.category || "clothing"),
       copy: parsed.copy || "",
       labelPurpose: parsed.labelPurpose || "",
       labelExpiry: parsed.labelExpiry || "詳見產品外盒",
