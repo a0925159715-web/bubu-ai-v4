@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>BUBU AI V7.5.3 完整預估成本定價版</title>
+<title>BUBU AI V7.6 暖色介面版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -198,13 +198,123 @@
   .status-backup{background:#f59e0b;color:#1e293b}
   .status-paused{background:#64748b;color:#fff}
   .status-retired{background:#ef4444;color:#fff}
+
+
+  /* =========================================================
+     BUBU AI V7.6 暖色介面版
+     僅調整視覺配色與價格卡片層次，不變更既有功能與資料欄位。
+     ========================================================= */
+  :root {
+    --bubu-bg: #f5f1ec;
+    --bubu-surface: #fffdfb;
+    --bubu-surface-soft: #faf6f1;
+    --bubu-input: #ffffff;
+    --bubu-border: #dfd3c7;
+    --bubu-text: #463b34;
+    --bubu-muted: #84756b;
+    --bubu-primary: #a9785d;
+    --bubu-primary-dark: #865b45;
+    --bubu-gold: #b7791f;
+    --bubu-blue: #527a8a;
+    --bubu-green: #34855b;
+    --bubu-red: #c34f4f;
+  }
+  body {
+    background: var(--bubu-bg);
+    color: var(--bubu-text);
+  }
+  h1 { color: #4d3b31; }
+  h2 { color: var(--bubu-primary-dark); }
+  .topbar {
+    background: linear-gradient(135deg, #fffaf6, #efe3d9);
+    border: 1px solid var(--bubu-border);
+    box-shadow: 0 5px 18px rgba(91, 67, 52, .08);
+  }
+  .topbar p, .subtle { color: var(--bubu-muted); }
+  .cloud { background: #4f8b78; }
+  .cloud.bad { background: var(--bubu-red); }
+  .card {
+    background: var(--bubu-surface);
+    border-color: var(--bubu-border);
+    box-shadow: 0 4px 16px rgba(91, 67, 52, .06);
+  }
+  label { color: #68594f; }
+  input, select, textarea {
+    background: var(--bubu-input);
+    color: var(--bubu-text);
+    border-color: var(--bubu-border);
+  }
+  input::placeholder, textarea::placeholder { color: #aa9c92; }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--bubu-primary);
+    box-shadow: 0 0 0 3px rgba(169, 120, 93, .14);
+  }
+  .btn { background: var(--bubu-primary); }
+  .btn.ai { background: linear-gradient(135deg, #a9785d, #c78e86); }
+  .btn.gray { background: #88796f; }
+  .btn.teal { background: #4f8b78; }
+  .btn.purple { background: #92709a; }
+
+  .priceGrid { gap: 10px; }
+  .mini, .priceBox, .preview, .statBox, .taskGroup, .monthlyReview, .checkPanel {
+    background: var(--bubu-surface-soft) !important;
+    border-color: var(--bubu-border) !important;
+  }
+  .mini {
+    min-height: 102px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: inset 0 3px 0 #d8b89f;
+  }
+  .mini:nth-child(2) { box-shadow: inset 0 3px 0 #8fb6a3; }
+  .mini:nth-child(3) { box-shadow: inset 0 3px 0 #caa0aa; }
+  .mini:nth-child(4) { box-shadow: inset 0 3px 0 #a99ac3; }
+  .mini .k { color: var(--bubu-muted); }
+  .mini .v { color: var(--bubu-gold); font-size: 18px; }
+  .mini .profit.good { color: var(--bubu-green); }
+  .mini .profit.okay { color: #a56c12; }
+  .mini .profit.bad { color: var(--bubu-red); }
+  .preview { color: #66584f; }
+  .preview.market { background: #f1ebe4 !important; }
+
+  table { color: var(--bubu-text); }
+  th, td { border-bottom-color: #e7ddd4; }
+  th { background: #f1e9e2; color: #79685d; }
+  .pill { background: #d9a44a; color: #fff; }
+  .pill.done { background: var(--bubu-green); }
+  .statBox .label { color: var(--bubu-muted); }
+  .statBox .num, .taskGroup h3, .checkPanelTitle { color: var(--bubu-gold); }
+  .progressWrap { background: #eee5dc; border-color: var(--bubu-border); }
+  .taskItem { border-bottom-color: #ded2c7; color: var(--bubu-text); }
+  .taskDoneText { color: #9a8e85; }
+  .checkRow label { color: #68594f; }
+
+  /* 覆蓋少數舊版寫在標籤內的深色背景 */
+  .card[style*="background:#0f172a"],
+  [style*="background:#0f172a"] {
+    background: var(--bubu-surface-soft) !important;
+    border-color: var(--bubu-border) !important;
+    color: var(--bubu-text) !important;
+  }
+  [style*="color:#cbd5e1"], [style*="color: #cbd5e1"] { color: #68594f !important; }
+  [style*="color:#94a3b8"], [style*="color: #94a3b8"] { color: var(--bubu-muted) !important; }
+  [style*="color:#64748b"], [style*="color: #64748b"] { color: #8e7f74 !important; }
+
+  @media (max-width: 720px) {
+    body { padding: 10px; }
+    .grid { grid-template-columns: 1fr; }
+    .priceGrid { grid-template-columns: 1fr; }
+    .topbar { padding: 12px; }
+  }
+
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div>
-    <h1>BUBU AI V7.5.3 完整預估成本定價版</h1>
+    <h1>BUBU AI V7.6 暖色介面版</h1>
     <p>每件安全分攤＋預估入庫運費；一般售價／鐵粉價／VIP會員價完整顯示。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -556,7 +666,7 @@ function getCost() {
   return Number(detectCategory() === 'skincare' ? val('skincareCost') : val('clothingCost')) || 0;
 }
 
-// V7.5.3 完整預估成本定價：
+// V7.6 完整預估成本定價：
 // 完整預估成本 = 商品進貨成本 + 每件安全分攤 + 預估入庫運費。
 // 為保留既有售價結構與舊資料相容性，三層價格仍使用 retail / vip / vvip 欄位儲存。
 function calcPrices() {
