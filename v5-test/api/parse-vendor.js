@@ -26,13 +26,24 @@ function extractProductCode(rawText,vendorCode){
   return '';
 }
 function extractHardCost(rawText){
-  const raw=String(rawText||'').replace(/[＄]/g,'$').replace(/[：]/g,':').replace(/[＝]/g,'=');
-  const neg=/(售價|零售|定價|建議售價|賣價|原價|市價|特價)/;
-  const lines=raw.split(/\n|。|，|,|；|;/).map(s=>s.trim()).filter(Boolean);
-  const patterns=[/(?:成本|拿貨|進價|批價|批|P|C|S|B|W|NT\$?|台幣|\$)\s*[:=]?\s*(\d{2,6})/i,/(?:【|\(|（|\[)\s*(\d{2,6})\s*(?:】|\)|）|\])/,/(\d{2,6})\s*元/];
-  for(const line of lines){ if(neg.test(line)) continue; for(const re of patterns){ const m=line.match(re); if(m){ const n=Number(m[1]); if(n>0&&n<100000) return n; } } }
-  const nums=raw.match(/\b\d{2,6}\b/g)||[];
-  if(nums.length===1&&!neg.test(raw)){ const n=Number(nums[0]); if(n>0&&n<100000) return n; }
+  const raw=String(rawText||'').replace(/[＄]/g,'$').replace(/[：]/g,':').replace(/[＝]/g,'=').replace(/,/g,'');
+  const negative=/(售價|零售|定價|建議售價|賣價|原價|市價|特價|會員價|vip|尺寸|胸|腰|臀|長|袖|肩|容量|ml|cm|公分)/i;
+  const lines=raw.split(/\n|。|，|；|;/).map(v=>v.trim()).filter(Boolean);
+  const strong=[
+    /(?:成本|拿貨價?|進貨價?|批發價?|批價|批)\s*[:=]?\s*(?:NT\$?|TWD|台幣|元|\$)?\s*(\d{2,6})/i,
+    /(?:^|\s)(?:P|C|B|S|W)\s*[:=]?\s*(\d{2,6})(?:\s|$)/i,
+    /(?:NT\$?|TWD|台幣|\$)\s*[:=]?\s*(\d{2,6})/i,
+    /(?:【|\(|（|\[)\s*(\d{2,6})\s*(?:】|\)|）|\])/i
+  ];
+  for(const line of lines){
+    if(negative.test(line) && !/(成本|拿貨|進貨|批發|批價)/.test(line)) continue;
+    for(const re of strong){
+      const m=line.match(re); const n=m?Number(m[1]):0;
+      if(n>=10&&n<100000) return n;
+    }
+  }
+  const standalone=lines.filter(line=>!negative.test(line)).map(line=>line.match(/^\s*(\d{2,6})\s*(?:元)?\s*$/)).filter(Boolean);
+  if(standalone.length===1){ const n=Number(standalone[0][1]); if(n>=10&&n<100000) return n; }
   return 0;
 }
 function extractSizeText(rawText){
@@ -108,6 +119,26 @@ function cleanSkincareProductName(rawText, aiName, hardCost, aiCapacity) {
     .trim();
 
   return base;
+}
+
+function cleanClothingProductName(rawText, vendorCode, aiName) {
+  const code = extractProductCode(rawText, vendorCode);
+  let name = cleanAiName(aiName, code)
+    .replace(/^(?:新品|新款|韓國|正韓|現貨|預購)\s*/i, "")
+    .replace(/(?:成本|拿貨|進價|批價|售價)\s*[:=]?\s*\d{2,6}/gi, "")
+    .replace(/\b(?:P|C|B|S|W)\s*[:=]?\s*\d{2,6}\b/gi, "")
+    .replace(/\s+/g, " ").trim();
+  if (!name) name = firstMeaningfulProductLine(rawText);
+  name = cleanAiName(name, code).slice(0, 60);
+  return code ? `${code} ${name}`.trim() : name;
+}
+
+function normalizeCategory(selectedCategory, parsedCategory, rawText) {
+  if (["clothing", "skincare", "life"].includes(selectedCategory)) return selectedCategory;
+  const raw = String(rawText || "").toLowerCase();
+  if (/牙刷|牙膏|洗衣|清潔|香氛|除濕|收納|居家|生活用品|洗碗|衛生紙/.test(raw)) return "life";
+  if (isSkincareCategory(selectedCategory, parsedCategory, rawText)) return "skincare";
+  return parsedCategory === "life" ? "life" : "clothing";
 }
 
 async function callOpenAI({ prompt, json = false, temperature = 0.2, retries = 1 }) {
@@ -218,7 +249,7 @@ module.exports = async function handler(req, res) {
     const hardCost = extractHardCost(rawText);
     const hardSizeText = extractSizeText(rawText);
 
-    const prompt = `你是台灣網拍賣家的廠商原文解析AI。只解析商品資料與生成文案，價格由網站計算。
+    const prompt = `你是 BUBU AI V7.5.3 的廠商原文解析器。請穩定區分服飾、保養品與生活用品，只解析商品資料與生成文案，售價由網站計算。
 
 請回傳純 JSON，不要 markdown，不要解釋：
 {
@@ -308,8 +339,8 @@ ${externalInfo || "未取得外部搜尋資料"}`;
     const parsed = await callOpenAI({ prompt, json: true, temperature: 0.25, retries: 1 });
 
     const finalCost = hardCost || Number(parsed.cost) || 0;
-    const finalCategory = parsed.category || selectedCategory || "clothing";
-    const isSkin = isSkincareCategory(selectedCategory, finalCategory, rawText);
+    const finalCategory = normalizeCategory(selectedCategory, parsed.category, rawText);
+    const isSkin = finalCategory === "skincare";
 
     let finalProductName = "";
     let finalCapacity = parsed.capacity || "";
@@ -317,8 +348,10 @@ ${externalInfo || "未取得外部搜尋資料"}`;
     if (isSkin) {
       finalCapacity = extractCapacity(rawText, parsed.capacity || parsed.specs || "");
       finalProductName = cleanSkincareProductName(rawText, parsed.productName || "", finalCost, finalCapacity);
+    } else if (finalCategory === "clothing") {
+      finalProductName = cleanClothingProductName(rawText, vendorCode, parsed.productName || "");
     } else {
-      finalProductName = composeProductName(rawText, vendorCode, parsed.productName || "");
+      finalProductName = cleanSkincareProductName(rawText, parsed.productName || "", finalCost, finalCapacity);
     }
 
     let aiSizeText = String(parsed.sizeText || "").trim();
@@ -332,7 +365,7 @@ ${externalInfo || "未取得外部搜尋資料"}`;
       sizeText: finalSizeText,
       capacity: finalCapacity || "",
       cost: finalCost,
-      category: isSkin ? "skincare" : (parsed.category || "clothing"),
+      category: finalCategory,
       copy: parsed.copy || "",
       labelPurpose: parsed.labelPurpose || "",
       labelExpiry: parsed.labelExpiry || "詳見產品外盒",

@@ -5,29 +5,42 @@ module.exports = async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY is not set" });
 
-    const { productName, category, retail, vip, vvip, cost, copy } = req.body || {};
+    const {
+      productName, category, retail, vip, vvip, cost,
+      estimatedCost, safeAllocation, inboundShipping, copy
+    } = req.body || {};
 
-    const prompt = `你是台灣韓國代購賣家的價格策略助理。
+    if (!productName) return res.status(400).json({ error: "缺少商品名稱" });
 
-注意：目前此 Gemini 備援版沒有即時網路搜尋功能，不能假裝查到外部市場價格。
-請根據商品名稱、分類、成本、原價、VIP、VVIP 與商品文案，給出合理的價格策略建議。
+    const fullCost = Number(estimatedCost) || Number(cost) || 0;
+    const prompt = `你是台灣韓國代購賣家的價格策略助理，使用 BUBU AI V7.5.3 定價結構。
+
+注意：此 Gemini 備援端點沒有即時網路搜尋功能，不能假裝查到外部市場價格。
+請只根據商品資料與完整預估成本，評估三層售價是否合理。
+
+價格名稱固定為：
+- 一般售價：${retail}
+- 鐵粉價：${vip}
+- VIP會員價：${vvip}
+
+成本結構：
+- 商品進貨成本：${cost}
+- 每件安全分攤：${safeAllocation || 0}
+- 預估入庫運費：${inboundShipping || 0}
+- 完整預估成本：${fullCost}
 
 請務必在 advice 開頭明確寫：
-「目前無法即時確認外部市場價格，此建議以成本與定價結構評估。」
+「目前無法即時確認外部市場價格，此建議以完整預估成本與三層定價結構評估。」
 
 請判斷：
-1. 原價是否合理
-2. VIP / VVIP 價格差是否有吸引力
-3. 毛利空間是否太低或太高
-4. 是否建議調整
-5. 給一段可直接放進系統的短備註
+1. 一般售價、鐵粉價、VIP會員價是否依序合理
+2. 各層價格差是否有吸引力，且不可出現會員價高於一般售價
+3. 以完整預估成本計算各層預估留下與利潤率
+4. 是否有價格低於完整預估成本或利潤過低的風險
+5. 給一句可直接放進系統的短備註
 
 商品名稱：${productName}
 分類：${category}
-我的進價/成本：${cost}
-我的原價：${retail}
-我的VIP價：${vip}
-我的VVIP價：${vvip}
 商品文案：${copy || ""}
 
 只回傳 JSON，不要 markdown：
@@ -40,35 +53,31 @@ module.exports = async function handler(req, res) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.2,
-            response_mime_type: "application/json"
-          }
+          generationConfig: { temperature: 0.15, response_mime_type: "application/json" }
         })
       }
     );
 
     const out = await ai.json();
-
-    if (!ai.ok) {
-      return res.status(ai.status).json({ error: out.error?.message || "Gemini API error" });
-    }
+    if (!ai.ok) return res.status(ai.status).json({ error: out.error?.message || "Gemini API error" });
 
     const text = out.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-
-    function safeParseJson(text) {
-      try { return JSON.parse(text); } catch (e) {}
-      const start = text.indexOf("{");
-      const end = text.lastIndexOf("}");
-      if (start !== -1 && end !== -1 && end > start) {
-        try { return JSON.parse(text.slice(start, end + 1)); } catch (e) {}
+    const safeParseJson = value => {
+      try { return JSON.parse(value); } catch (e) {}
+      const start = String(value).indexOf("{");
+      const end = String(value).lastIndexOf("}");
+      if (start !== -1 && end > start) {
+        try { return JSON.parse(String(value).slice(start, end + 1)); } catch (e) {}
       }
-      return { advice: text || "AI未回傳建議。", shortNote: "" };
-    }
+      return { advice: String(value || "AI未回傳建議。"), shortNote: "" };
+    };
 
-    return res.status(200).json(safeParseJson(text));
-
+    const result = safeParseJson(text);
+    return res.status(200).json({
+      advice: String(result.advice || "AI未回傳建議。"),
+      shortNote: String(result.shortNote || "")
+    });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message || "Gemini API error" });
   }
 };
