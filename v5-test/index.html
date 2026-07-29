@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>BUBU AI V7.6 暖色介面版</title>
+<title>BUBU AI V8.0 暖色介面版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -201,7 +201,7 @@
 
 
   /* =========================================================
-     BUBU AI V7.6 暖色介面版
+     BUBU AI V8.0 暖色介面版
      僅調整視覺配色與價格卡片層次，不變更既有功能與資料欄位。
      ========================================================= */
   :root {
@@ -314,7 +314,7 @@
 
 <div class="topbar">
   <div>
-    <h1>BUBU AI V7.6 暖色介面版</h1>
+    <h1>BUBU AI V8.0 暖色介面版</h1>
     <p>每件安全分攤＋預估入庫運費；一般售價／鐵粉價／VIP會員價完整顯示。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -486,7 +486,7 @@
 
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
-    <h2>⑤ 供應商維護中心 V7.5.1</h2>
+    <h2>⑤ 供應商維護中心 V8.0</h2>
     <span class="subtle">供應商狀態、代碼備註、備案/淘汰、進貨紀錄</span>
   </div>
 
@@ -530,34 +530,18 @@
     <div class="card" style="background:#0f172a">
       <h2>💰 進貨金額登錄（保養品＋服飾）</h2>
       <div class="grid2">
-        <div><label>供應商</label><select id="purchaseSupplier">
-            <option value="MOMO">MOMO</option>
-            <option value="韓妝批發">韓妝批發</option>
-            <option value="東大門美妝">東大門美妝</option>
-            <option value="SD批發">SD批發</option>
-            <option value="957批發">957批發</option>
-            <option value="A米格">A米格</option>
-            <option value="MC COKA">MC COKA</option>
-            <option value="MK smile">MK smile</option>
-            <option value="衣玥">衣玥</option>
-            <option value="APRIL">APRIL</option>
-            <option value="宜琳">宜琳</option>
-            <option value="727">727</option>
-            <option value="米淇">米淇</option>
-            <option value="宜美">宜美</option>
-            <option value="Circle">Circle</option>
-            <option value="H服飾">H服飾</option>
-            <option value="彎彎">彎彎</option>
-            <option value="米亞">米亞</option>
-          </select></div>
-        <div><label>日期（可填任何日期）</label><input id="purchaseDate" type="text" placeholder="例如 2026-06-09 或 2026-07-15"/></div>
-        <div><label>金額</label><input id="purchaseAmount" type="number" placeholder="例如 3500"/></div>
+        <div><label>日期</label><input id="purchaseDate" type="date"/></div>
+        <div><label>供應商</label><select id="purchaseSupplier"><option value="">請先至供應商維護中心建立廠商</option></select></div>
+        <div><label>進貨總金額</label><input id="purchaseAmount" type="number" min="0" placeholder="例如 25800"/></div>
+        <div><label>運費金額</label><input id="purchaseShipping" type="number" min="0" placeholder="例如 1200"/></div>
+        <div><label>進貨總數量</label><input id="purchaseQuantity" type="number" min="0" step="1" placeholder="例如 85"/></div>
+        <div><label>付款方式</label><select id="purchasePayment"><option value="匯款">匯款</option><option value="信用卡">信用卡</option><option value="現金">現金</option><option value="貨到付款">貨到付款</option><option value="其他">其他</option></select></div>
       </div>
       <label>備註</label>
-      <input id="purchaseNote" placeholder="例如 后+OHUI / 收據單"/>
+      <input id="purchaseNote" placeholder="例如：服飾一批／保養品補貨／收據單"/>
       <button class="btn small teal" onclick="addPurchaseRecord()">💾 儲存進貨紀錄</button>
       <div style="overflow-x:auto;margin-top:10px">
-        <table class="miniTable"><thead><tr><th>日期</th><th>供應商</th><th>金額</th><th>備註</th><th>動作</th></tr></thead><tbody id="purchaseBody"></tbody></table>
+        <table class="miniTable"><thead><tr><th>日期</th><th>供應商</th><th>進貨金額</th><th>運費</th><th>總數量</th><th>付款方式</th><th>備註</th><th>動作</th></tr></thead><tbody id="purchaseBody"></tbody></table>
       </div>
 
       <div class="monthlyReview" style="margin-top:14px">
@@ -597,12 +581,48 @@
         <button class="btn small purple" onclick="exportPurchaseMonthExcel()">📤 匯出該月份進貨 Excel</button>
         <div style="overflow-x:auto;margin-top:10px">
           <table class="miniTable">
-            <thead><tr><th>日期</th><th>供應商</th><th>類型</th><th>金額</th><th>備註</th></tr></thead>
+            <thead><tr><th>日期</th><th>供應商</th><th>類型</th><th>進貨金額</th><th>運費</th><th>總數量</th><th>付款方式</th><th>備註</th></tr></thead>
             <tbody id="purchaseMonthBody"></tbody>
           </table>
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;background:#0f172a">
+    <div class="sectionTitle"><h2>🧾 營運支出＋設備／一次性採購</h2><span class="subtle">與商品進貨分開記錄</span></div>
+    <div class="grid2">
+      <div><label>日期</label><input id="expenseDate" type="date"/></div>
+      <div><label>支出類型</label><select id="expenseKind"><option value="營運支出">營運支出</option><option value="設備／一次性採購">設備／一次性採購</option></select></div>
+      <div><label>項目</label><input id="expenseItem" placeholder="例如：標籤紙／系統費／標籤機"/></div>
+      <div><label>金額</label><input id="expenseAmount" type="number" min="0" placeholder="例如 1899"/></div>
+      <div><label>付款方式</label><select id="expensePayment"><option value="匯款">匯款</option><option value="信用卡">信用卡</option><option value="現金">現金</option><option value="其他">其他</option></select></div>
+      <div><label>備註</label><input id="expenseNote" placeholder="例如：標籤機本體歸設備；標籤紙歸營運支出"/></div>
+    </div>
+    <button class="btn small teal" onclick="addExpenseRecord()">💾 儲存支出</button>
+    <div style="overflow-x:auto;margin-top:10px"><table class="miniTable"><thead><tr><th>日期</th><th>類型</th><th>項目</th><th>金額</th><th>付款方式</th><th>備註</th><th>動作</th></tr></thead><tbody id="expenseBody"></tbody></table></div>
+  </div>
+
+  <div class="card" style="margin-top:16px;background:#0f172a">
+    <div class="sectionTitle"><h2>📊 每月營運摘要</h2><span class="subtle">成本分析與利潤分析先保留，等資料完整再啟用</span></div>
+    <div class="grid2">
+      <div><label>月份</label><input id="dashboardMonth" type="month" onchange="renderMonthlyDashboard()"/></div>
+      <div><label>訂單數（單數）</label><input id="monthlyOrders" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
+      <div><label>商品總件數</label><input id="monthlyItems" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
+      <div><label>服飾件數</label><input id="monthlyClothing" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
+      <div><label>保養品件數</label><input id="monthlySkincare" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
+      <div><label>營業額</label><input id="monthlyRevenue" type="number" min="0" oninput="saveMonthlyMetrics()"/></div>
+    </div>
+    <div class="statGrid" style="margin-top:12px">
+      <div class="statBox"><div class="label">平均每單件數</div><div id="dashItemsPerOrder" class="num">0</div></div>
+      <div class="statBox"><div class="label">平均客單價</div><div id="dashAvgOrder" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">平均商品售價</div><div id="dashAvgItem" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">本月商品進貨</div><div id="dashPurchase" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">本月進貨運費</div><div id="dashShipping" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">本月營運支出</div><div id="dashOperating" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">本月設備支出</div><div id="dashEquipment" class="num">NT$0</div></div>
+    </div>
+    <div class="preview" style="margin-top:12px"><b>成本分析：</b>先保留。未來會用「商品進貨＋運費＋營運支出」看本月總投入。<br><b>利潤分析：</b>先保留。等銷售成本資料完整後，再計算毛利與真正淨利。</div>
   </div>
 </div>
 
@@ -666,7 +686,7 @@ function getCost() {
   return Number(detectCategory() === 'skincare' ? val('skincareCost') : val('clothingCost')) || 0;
 }
 
-// V7.6 完整預估成本定價：
+// V8.0 完整預估成本定價：
 // 完整預估成本 = 商品進貨成本 + 每件安全分攤 + 預估入庫運費。
 // 為保留既有售價結構與舊資料相容性，三層價格仍使用 retail / vip / vvip 欄位儲存。
 function calcPrices() {
@@ -1461,19 +1481,12 @@ function renderSuppliers() {
 function updatePurchaseSupplierOptions() {
   const el = get('purchaseSupplier');
   if (!el) return;
-
-  // V6.8.1：進貨金額不只保養品，服飾供應商也可以登錄。
-  // 供應商下拉會合併「預設清單」＋「suppliers 表裡所有供應商名稱」。
-  const base = [
-    'MOMO','韓妝批發','東大門美妝','SD批發','957批發',
-    'A米格','MC COKA','MK smile','衣玥','APRIL','宜琳','727',
-    '米淇','宜美','Circle','H服飾','彎彎','米亞'
-  ];
-  const fromSuppliers = suppliers.map(s => s.supplier_name).filter(Boolean);
-  const names = [...new Set([...base, ...fromSuppliers])];
   const current = el.value;
-  el.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
-  if (names.includes(current)) el.value = current;
+  const rows = (suppliers || []).filter(s => (s.status || '啟用') !== '淘汰' && s.supplier_name);
+  el.innerHTML = rows.length
+    ? rows.map(s => `<option value="${s.supplier_name}">${s.supplier_name}｜${s.supplier_type || '未分類'}｜${s.status || '啟用'}</option>`).join('')
+    : '<option value="">請先至供應商維護中心建立廠商</option>';
+  if (rows.some(s => s.supplier_name === current)) el.value = current;
 }
 
 async function addSupplier() {
@@ -1533,56 +1546,37 @@ async function loadPurchaseRecords() {
   }
 }
 
-function renderPurchaseRecords() {
-  const body = get('purchaseBody');
-  if (!body) return;
-
-  const start = monthStartISO();
-  const end = monthEndISO();
-  const monthRows = purchaseRecords.filter(r => (r.purchase_date || '').slice(0,10) >= start && (r.purchase_date || '').slice(0,10) <= end);
-  const monthTotal = monthRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-  const momoTotal = monthRows
-    .filter(r => String(r.supplier_name || '').toLowerCase().includes('momo'))
-    .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-
-  get('monthPurchaseTotal').textContent = money(monthTotal);
-
-  const target = 12000;
-  const pct = Math.min(100, Math.round(momoTotal / target * 100));
-  get('momoProgressText').textContent = `${money(momoTotal)} / ${money(target)}`;
-  get('momoProgressBar').style.width = pct + '%';
-  get('momoProgressNote').textContent = momoTotal >= target ? '✅ MOMO 本月低消已達成' : `尚差 ${money(target - momoTotal)}，目前 ${pct}%`;
-
-  body.innerHTML = purchaseRecords.slice(0, 30).map((r, i) => `
-    <tr>
-      <td>${r.purchase_date || ''}</td>
-      <td>${r.supplier_name || ''}</td>
-      <td><b>${money(r.amount || 0)}</b></td>
-      <td>${r.note || ''}</td>
-      <td><button class="btn small red" onclick="deletePurchaseRecord(${i})">刪除</button></td>
-    </tr>`).join('') || '<tr><td colspan="5" class="subtle">尚未建立進貨紀錄</td></tr>';
+function encodePurchaseNote(note, shipping, quantity, payment){
+  return `[BUBU_META shipping=${Number(shipping)||0};qty=${Number(quantity)||0};payment=${encodeURIComponent(payment||'')} ]${note||''}`;
 }
-
+function decodePurchaseRecord(r){
+  const raw=String(r.note||'');
+  const m=raw.match(/^\[BUBU_META shipping=([\d.]+);qty=([\d.]+);payment=([^\]]*) \](.*)$/s);
+  return {shipping:m?Number(m[1])||0:Number(r.shipping_amount)||0,quantity:m?Number(m[2])||0:Number(r.total_quantity)||0,payment:m?decodeURIComponent(m[3]||''):String(r.payment_method||''),note:m?m[4]:raw};
+}
+function renderPurchaseRecords() {
+  const body = get('purchaseBody'); if (!body) return;
+  const month = new Date().toISOString().slice(0,7);
+  const monthRows = purchaseRecords.filter(r => String(r.purchase_date||'').slice(0,7)===month);
+  const monthTotal = monthRows.reduce((sum,r)=>sum+(Number(r.amount)||0),0);
+  const momoTotal = monthRows.filter(r=>String(r.supplier_name||'').toLowerCase().includes('momo')).reduce((sum,r)=>sum+(Number(r.amount)||0),0);
+  if(get('monthPurchaseTotal')) get('monthPurchaseTotal').textContent=money(monthTotal);
+  const target=12000,pct=Math.min(100,Math.round(momoTotal/target*100));
+  if(get('momoProgressText')) get('momoProgressText').textContent=`${money(momoTotal)} / ${money(target)}`;
+  if(get('momoProgressBar')) get('momoProgressBar').style.width=pct+'%';
+  if(get('momoProgressNote')) get('momoProgressNote').textContent=momoTotal>=target?'✅ MOMO 本月低消已達成':`尚差 ${money(target-momoTotal)}，目前 ${pct}%`;
+  body.innerHTML=purchaseRecords.slice(0,50).map((r,i)=>{const x=decodePurchaseRecord(r);return `<tr><td>${r.purchase_date||''}</td><td>${r.supplier_name||''}</td><td><b>${money(r.amount||0)}</b></td><td>${money(x.shipping)}</td><td>${x.quantity||0}</td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td><button class="btn small red" onclick="deletePurchaseRecord(${i})">刪除</button></td></tr>`}).join('')||'<tr><td colspan="8" class="subtle">尚未建立進貨紀錄</td></tr>';
+  renderMonthlyDashboard();
+}
 async function addPurchaseRecord() {
-  const supplier_name = val('purchaseSupplier');
-  const amount = Number(val('purchaseAmount')) || 0;
-  const rawDate = val('purchaseDate') || todayISO();
-  const purchase_date = normalizePurchaseDate(rawDate);
-  if (!purchase_date) { alert('日期格式請輸入 2026-06-09 或 2026/06/09'); return; }
-  const note = val('purchaseNote');
-  if (!supplier_name) { alert('請選擇供應商'); return; }
-  if (amount <= 0) { alert('請輸入正確金額'); return; }
-
-  const { error } = await supabaseClient.from('purchase_records').insert({ supplier_name, amount, purchase_date, note });
-  if (error) { alert('新增進貨紀錄失敗：' + error.message); return; }
-
-  set('purchaseAmount',''); set('purchaseNote','');
-  get('purchaseDate').value = todayISO();
-  await loadPurchaseRecords();
-loadPurchaseArchives();
-ensureArchiveDefaultMonth();
-reloadPurchaseRecordsForArchive();
-  cloud('✅ 進貨紀錄已儲存', true);
+  const supplier_name=val('purchaseSupplier'),amount=Number(val('purchaseAmount'))||0,shipping=Number(val('purchaseShipping'))||0,quantity=Number(val('purchaseQuantity'))||0,payment=val('purchasePayment');
+  const purchase_date=normalizePurchaseDate(val('purchaseDate')||todayISO());
+  if(!purchase_date){alert('日期格式不正確');return;} if(!supplier_name){alert('請選擇供應商');return;} if(amount<=0){alert('請輸入進貨總金額');return;} if(quantity<=0){alert('請輸入進貨總數量');return;}
+  const note=encodePurchaseNote(val('purchaseNote'),shipping,quantity,payment);
+  const {error}=await supabaseClient.from('purchase_records').insert({supplier_name,amount,purchase_date,note});
+  if(error){alert('新增進貨紀錄失敗：'+error.message);return;}
+  ['purchaseAmount','purchaseShipping','purchaseQuantity','purchaseNote'].forEach(id=>set(id,'')); get('purchaseDate').value=todayISO();
+  await loadPurchaseRecords(); if(typeof loadPurchaseArchives==='function')loadPurchaseArchives(); if(typeof reloadPurchaseRecordsForArchive==='function')reloadPurchaseRecordsForArchive(); cloud('✅ 進貨紀錄已儲存',true);
 }
 
 async function deletePurchaseRecord(i) {
@@ -1591,6 +1585,7 @@ async function deletePurchaseRecord(i) {
   const { error } = await supabaseClient.from('purchase_records').delete().eq('id', r.id);
   if (error) { alert('刪除進貨紀錄失敗：' + error.message); return; }
   await loadPurchaseRecords();
+initV8();
 reloadPurchaseRecordsForArchive();
 }
 
@@ -1600,7 +1595,7 @@ reloadPurchaseRecordsForArchive();
 function supplierStatusClass(status){return status==='啟用'?'status-active':status==='備案'?'status-backup':status==='淘汰'?'status-retired':'status-paused';}
 function getSupplierActiveList(type='服飾'){return (suppliers||[]).filter(s=>(s.supplier_type||'服飾')===type&&(s.status||'啟用')==='啟用');}
 function refreshTempSupplierOptions(){const sel=get('tempTaskSupplier'); if(!sel)return; const rows=(suppliers||[]).filter(s=>(s.status||'啟用')!=='淘汰'); sel.innerHTML=rows.map(s=>`<option value="${s.supplier_name}">${s.supplier_name}｜${s.supplier_type||'服飾'}｜${s.status||'啟用'}</option>`).join('')||'<option value="">尚無供應商</option>';}
-async function loadSuppliers(){try{const {data,error}=await supabaseClient.from('suppliers').select('*').order('id',{ascending:true}); if(error)throw error; suppliers=(data||[]).map(s=>({...s,status:s.status||(s.is_active===false?'暫停':'啟用'),note:s.note||''})); renderSuppliers(); refreshTempSupplierOptions();}catch(e){cloud('供應商讀取失敗：'+e.message,false);}}
+async function loadSuppliers(){try{const {data,error}=await supabaseClient.from('suppliers').select('*').order('id',{ascending:true}); if(error)throw error; suppliers=(data||[]).map(s=>({...s,status:s.status||(s.is_active===false?'暫停':'啟用'),note:s.note||''})); renderSuppliers(); refreshTempSupplierOptions(); updatePurchaseSupplierOptions();}catch(e){cloud('供應商讀取失敗：'+e.message,false);}}
 function renderSuppliers(){const body=get('supplierBody'); if(!body)return; if(get('supplierCount'))get('supplierCount').textContent=suppliers.length; body.innerHTML=(suppliers||[]).map((s,i)=>`<tr><td><b>${s.supplier_name||''}</b></td><td>${s.code||''}</td><td>${s.supplier_type||'服飾'}</td><td><span class="statusPill ${supplierStatusClass(s.status||'啟用')}">${s.status||'啟用'}</span></td><td>${s.note||''}</td><td style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn small gray" onclick="fillSupplierForm(${i})">編輯</button><button class="btn small" onclick="setSupplierStatus(${i},'啟用')">啟用</button><button class="btn small" onclick="setSupplierStatus(${i},'備案')">備案</button><button class="btn small gray" onclick="setSupplierStatus(${i},'暫停')">暫停</button><button class="btn small red" onclick="setSupplierStatus(${i},'淘汰')">淘汰</button><button class="btn small red" onclick="deleteSupplier(${i})">刪除</button></td></tr>`).join('')||'<tr><td colspan="6" class="subtle">尚未建立供應商</td></tr>';}
 function fillSupplierForm(i){const s=suppliers[i]; if(!s)return; set('supplierName',s.supplier_name||''); set('supplierCode',s.code||''); if(get('supplierType'))get('supplierType').value=s.supplier_type||'服飾'; if(get('supplierStatus'))get('supplierStatus').value=s.status||'啟用'; set('supplierNote',s.note||'');}
 async function addSupplier(){const supplier_name=val('supplierName'),code=val('supplierCode'),supplier_type=val('supplierType')||'服飾',status=val('supplierStatus')||'啟用',note=val('supplierNote'); if(!supplier_name){alert('請輸入供應商名稱');return;} const existing=suppliers.find(s=>(s.supplier_name||'')===supplier_name); let error; if(existing)({error}=await supabaseClient.from('suppliers').update({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'}).eq('id',existing.id)); else ({error}=await supabaseClient.from('suppliers').insert({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'})); if(error){alert('供應商儲存失敗：'+error.message);return;} set('supplierName','');set('supplierCode','');set('supplierNote',''); if(get('supplierStatus'))get('supplierStatus').value='啟用'; await loadSuppliers(); cloud('✅ 供應商已儲存',true);}
@@ -1613,6 +1608,17 @@ async function addTempDailyTask(){const dateStr=getTodayTaskDate(),task_name=val
 
 
 
+
+// V8.0 營運支出與每月摘要（儲存在本機瀏覽器）
+let expenseRecords=JSON.parse(localStorage.getItem('bubu_expenses_v8')||'[]');
+let monthlyMetrics=JSON.parse(localStorage.getItem('bubu_monthly_metrics_v8')||'{}');
+function currentMonth(){return new Date().toISOString().slice(0,7)}
+function addExpenseRecord(){const date=val('expenseDate')||todayISO(),kind=val('expenseKind'),item=val('expenseItem'),amount=Number(val('expenseAmount'))||0,payment=val('expensePayment'),note=val('expenseNote');if(!item){alert('請輸入支出項目');return}if(amount<=0){alert('請輸入正確金額');return}expenseRecords.unshift({id:Date.now(),date,kind,item,amount,payment,note});localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));['expenseItem','expenseAmount','expenseNote'].forEach(id=>set(id,''));renderExpenses();renderMonthlyDashboard();cloud('✅ 支出已儲存',true)}
+function deleteExpenseRecord(id){if(!confirm('確定刪除此筆支出？'))return;expenseRecords=expenseRecords.filter(x=>x.id!==id);localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));renderExpenses();renderMonthlyDashboard()}
+function renderExpenses(){const b=get('expenseBody');if(!b)return;b.innerHTML=expenseRecords.slice(0,80).map(x=>`<tr><td>${x.date}</td><td>${x.kind}</td><td>${x.item}</td><td><b>${money(x.amount)}</b></td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td><button class="btn small red" onclick="deleteExpenseRecord(${x.id})">刪除</button></td></tr>`).join('')||'<tr><td colspan="7" class="subtle">尚未建立支出紀錄</td></tr>'}
+function saveMonthlyMetrics(){const m=val('dashboardMonth')||currentMonth();monthlyMetrics[m]={orders:Number(val('monthlyOrders'))||0,items:Number(val('monthlyItems'))||0,clothing:Number(val('monthlyClothing'))||0,skincare:Number(val('monthlySkincare'))||0,revenue:Number(val('monthlyRevenue'))||0};localStorage.setItem('bubu_monthly_metrics_v8',JSON.stringify(monthlyMetrics));renderMonthlyDashboard(false)}
+function renderMonthlyDashboard(loadInputs=true){const m=val('dashboardMonth')||currentMonth();if(loadInputs){const x=monthlyMetrics[m]||{};set('monthlyOrders',x.orders||'');set('monthlyItems',x.items||'');set('monthlyClothing',x.clothing||'');set('monthlySkincare',x.skincare||'');set('monthlyRevenue',x.revenue||'')}const orders=Number(val('monthlyOrders'))||0,items=Number(val('monthlyItems'))||0,revenue=Number(val('monthlyRevenue'))||0;const prs=(purchaseRecords||[]).filter(r=>String(r.purchase_date||'').slice(0,7)===m);const purchase=prs.reduce((a,r)=>a+(Number(r.amount)||0),0),shipping=prs.reduce((a,r)=>a+decodePurchaseRecord(r).shipping,0);const ex=expenseRecords.filter(x=>String(x.date||'').slice(0,7)===m);const operating=ex.filter(x=>x.kind==='營運支出').reduce((a,x)=>a+(Number(x.amount)||0),0),equipment=ex.filter(x=>x.kind==='設備／一次性採購').reduce((a,x)=>a+(Number(x.amount)||0),0);if(get('dashItemsPerOrder'))get('dashItemsPerOrder').textContent=orders?(items/orders).toFixed(2)+' 件':'0';if(get('dashAvgOrder'))get('dashAvgOrder').textContent=money(orders?revenue/orders:0);if(get('dashAvgItem'))get('dashAvgItem').textContent=money(items?revenue/items:0);if(get('dashPurchase'))get('dashPurchase').textContent=money(purchase);if(get('dashShipping'))get('dashShipping').textContent=money(shipping);if(get('dashOperating'))get('dashOperating').textContent=money(operating);if(get('dashEquipment'))get('dashEquipment').textContent=money(equipment)}
+function initV8(){const t=todayISO();if(get('purchaseDate'))get('purchaseDate').value=t;if(get('expenseDate'))get('expenseDate').value=t;if(get('dashboardMonth'))get('dashboardMonth').value=currentMonth();renderExpenses();renderMonthlyDashboard()}
 
 // 啟動
 supabaseClient
