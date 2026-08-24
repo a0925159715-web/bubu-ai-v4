@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>BUBU AI V8.0 暖色介面版</title>
+<title>BUBU AI V8.1 月度進貨總表版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -314,7 +314,7 @@
 
 <div class="topbar">
   <div>
-    <h1>BUBU AI V8.0 暖色介面版</h1>
+    <h1>BUBU AI V8.1 月度進貨總表版</h1>
     <p>每件安全分攤＋預估入庫運費；一般售價／鐵粉價／VIP會員價完整顯示。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -409,28 +409,15 @@
     <div id="skincareFields" class="hidden">
       <label>容量 / 規格</label>
       <input id="capacity" oninput="updateAll()"/>
-      <label>中文標籤｜用途</label>
-      <input id="labelPurpose" oninput="updateAll()"/>
-      <label>中文標籤｜保存期限</label>
-      <input id="labelExpiry" value="詳見產品外盒" oninput="updateAll()"/>
-      <label>中文標籤｜責任業者</label>
-      <input id="labelCompany" value="布布韓國工作室" oninput="updateAll()"/>
-      <label>中文標籤｜聯絡方式</label>
-      <input id="labelContact" value="@bubukorea" oninput="updateAll()"/>
-      <label>中文標籤｜產地</label>
-      <input id="labelOrigin" value="韓國" oninput="updateAll()"/>
-      <label>中文標籤｜使用方式 / 注意事項補充</label>
-      <textarea id="labelUsage" oninput="updateAll()"></textarea>
     </div>
 
     <div id="importInfoBox" class="checkPanel hidden">
       <div class="checkPanelTitle">保養品公開資訊勾選</div>
       <div class="checkRow">
-        <label><input id="hasChineseLabel" type="checkbox" onchange="handleImportChecks();updateAll()"> 中文標籤</label>
-        <label><input id="hasPifFile" type="checkbox" onchange="handleImportChecks();updateAll()"> PIF文件</label>
-        <label><input id="isSeaShipping" type="checkbox" onchange="handleImportChecks();updateAll()"> 韓國海運</label>
+        <label><input id="hasPifFile" type="checkbox" onchange="updateAll()"> PIF文件</label>
+        <label><input id="isSeaShipping" type="checkbox" onchange="updateAll()"> 韓國海運</label>
       </div>
-      <div class="subtle" style="margin-top:6px">只會在保養品分類顯示；服飾不會帶入這些文字。</div>
+      <div class="subtle" style="margin-top:6px">只會在保養品分類顯示。</div>
     </div>
 
     <div class="grid2" style="margin-top:12px">
@@ -462,11 +449,6 @@
   <button class="btn gray" onclick="copyPost()">📋 一鍵複製完整貼文</button>
 </div>
 
-<div id="labelCard" class="card hidden" style="margin-top:16px">
-  <h2>④ 保養品中文標籤</h2>
-  <div id="labelPreview" class="preview"></div>
-  <button class="btn gray" onclick="copyLabel()">🏷️ 複製中文標籤</button>
-</div>
 
 
 <div class="card" style="margin-top:16px">
@@ -492,13 +474,13 @@
 
   <div class="statGrid">
     <div class="statBox">
-      <div class="label">6月 MOMO 低消進度</div>
+      <div class="label">本月 MOMO 低消進度</div>
       <div id="momoProgressText" class="num">NT$0 / NT$12,000</div>
       <div class="progressWrap"><div id="momoProgressBar" class="progressBar"></div></div>
       <div id="momoProgressNote" class="subtle" style="margin-top:6px">尚未登錄進貨。</div>
     </div>
     <div class="statBox">
-      <div class="label">6月進貨總額</div>
+      <div class="label">本月進貨總額</div>
       <div id="monthPurchaseTotal" class="num">NT$0</div>
       <div class="subtle">依 purchase_records 自動加總</div>
     </div>
@@ -539,49 +521,41 @@
       </div>
       <label>備註</label>
       <input id="purchaseNote" placeholder="例如：服飾一批／保養品補貨／收據單"/>
-      <button class="btn small teal" onclick="addPurchaseRecord()">💾 儲存進貨紀錄</button>
+      <button id="purchaseSaveBtn" class="btn small teal" onclick="addPurchaseRecord()">💾 儲存進貨紀錄</button>
+      <button id="cancelPurchaseEditBtn" class="btn small gray hidden" onclick="cancelPurchaseEdit()">取消編輯</button>
       <div style="overflow-x:auto;margin-top:10px">
         <table class="miniTable"><thead><tr><th>日期</th><th>供應商</th><th>進貨金額</th><th>運費</th><th>總數量</th><th>付款方式</th><th>備註</th><th>動作</th></tr></thead><tbody id="purchaseBody"></tbody></table>
       </div>
 
       <div class="monthlyReview" style="margin-top:14px">
         <div class="sectionTitle">
-          <h2 style="margin:0">📦 月份封存</h2>
-          <span class="subtle">把指定月份複製到 purchase_archives，之後刪工作區也不影響歷史</span>
-        </div>
-        <div class="grid2">
-          <div>
-            <label>要封存的月份</label>
-            <input id="archiveMonthInput" placeholder="例如 2026-06"/>
-          </div>
-          <div>
-            <label>封存狀態</label>
-            <div id="archiveStatus" class="preview" style="min-height:42px;margin-top:0">尚未封存。</div>
-          </div>
-        </div>
-        <button class="btn small purple" onclick="archivePurchaseMonth()">📦 封存此月份</button>
-      </div>
-
-      <div class="monthlyReview" style="margin-top:14px">
-        <div class="sectionTitle">
-          <h2 style="margin:0">📅 歷史封存月份</h2>
-          <span class="subtle">從封存資料讀取；工作區刪除後仍保留</span>
+          <h2 style="margin:0">📊 月度進貨總表</h2>
+          <span class="subtle">每個月份獨立計算；可切換舊月份、編輯或刪除資料，修改後立即重新加總。</span>
         </div>
         <div class="grid2">
           <div>
             <label>查詢月份</label>
-            <select id="purchaseMonthSelect" onchange="renderPurchaseMonthArchive()"></select>
+            <input id="purchaseMonthSelect" type="month" onchange="renderPurchaseMonthSummary()"/>
           </div>
           <div>
-            <label>該月總進貨</label>
-            <div id="purchaseMonthTotal" class="preview" style="min-height:42px;margin-top:0">NT$0</div>
+            <label>該月進貨筆數</label>
+            <div id="purchaseMonthCount" class="preview" style="min-height:42px;margin-top:0">0 筆</div>
           </div>
         </div>
-        <div id="purchaseMonthSupplierSummary" class="preview" style="min-height:50px">尚未選擇月份。</div>
+
+        <div class="statGrid" style="margin-top:12px">
+          <div class="statBox"><div class="label">進貨金額</div><div id="purchaseMonthSubtotal" class="num">NT$0</div></div>
+          <div class="statBox"><div class="label">運費</div><div id="purchaseMonthShipping" class="num">NT$0</div></div>
+          <div class="statBox"><div class="label">含運總投入</div><div id="purchaseMonthTotal" class="num">NT$0</div></div>
+          <div class="statBox"><div class="label">總進貨數量</div><div id="purchaseMonthQuantity" class="num">0</div></div>
+          <div class="statBox"><div class="label">供應商數</div><div id="purchaseMonthSupplierCount" class="num">0</div></div>
+        </div>
+
+        <div id="purchaseMonthSupplierSummary" class="preview" style="min-height:50px">尚無資料。</div>
         <button class="btn small purple" onclick="exportPurchaseMonthExcel()">📤 匯出該月份進貨 Excel</button>
         <div style="overflow-x:auto;margin-top:10px">
           <table class="miniTable">
-            <thead><tr><th>日期</th><th>供應商</th><th>類型</th><th>進貨金額</th><th>運費</th><th>總數量</th><th>付款方式</th><th>備註</th></tr></thead>
+            <thead><tr><th>日期</th><th>供應商</th><th>類型</th><th>進貨金額</th><th>運費</th><th>含運合計</th><th>總數量</th><th>付款方式</th><th>備註</th><th>動作</th></tr></thead>
             <tbody id="purchaseMonthBody"></tbody>
           </table>
         </div>
@@ -634,6 +608,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let currentCopy = '', parsedCategory = 'clothing', lastAutoAddedKey = '';
 let tasks = [], currentEditingId = null, autoSaveTimer = null;
 let suppliers = [], purchaseRecords = [];
+let purchaseEditingId = null;
 let dailyTasks = [];
 
 const get = id => document.getElementById(id);
@@ -653,19 +628,12 @@ function cleanText(v, mode = 'line') {
 }
 
 
-function handleImportChecks(){
-  const label=get('hasChineseLabel'), pif=get('hasPifFile'), sea=get('isSeaShipping');
-  if(!label) return;
-  if((pif&&pif.checked)||(sea&&sea.checked)) label.checked=true;
-}
 function getImportNotes(){
   if(detectCategory()!=='skincare') return '';
-  const hasLabel=get('hasChineseLabel')&&get('hasChineseLabel').checked;
   const hasPif=get('hasPifFile')&&get('hasPifFile').checked;
   const isSea=get('isSeaShipping')&&get('isSeaShipping').checked;
   const notes=[];
-  if(hasPif) notes.push('✔ 本商品備有 PIF 文件及中文標示。');
-  else if(hasLabel) notes.push('✔ 本商品附中文標示。');
+  if(hasPif) notes.push('✔ 本商品備有 PIF 文件。');
   if(isSea) notes.push('✔ 韓國海運商品，約需等待 4–8 週。');
   return notes.join('\n');
 }
@@ -724,9 +692,8 @@ function switchMode() {
   get('clothingCostBox').classList.toggle('hidden', skin);
   get('skincareFields').classList.toggle('hidden', !skin);
   get('skincareCostBox').classList.toggle('hidden', !skin);
-  get('labelCard').classList.toggle('hidden', !skin);
   if (get('importInfoBox')) get('importInfoBox').classList.toggle('hidden', !skin);
-  if (!skin) ['hasChineseLabel','hasPifFile','isSeaShipping'].forEach(id => { if (get(id)) get(id).checked = false; });
+  if (!skin) ['hasPifFile','isSeaShipping'].forEach(id => { if (get(id)) get(id).checked = false; });
 }
 
 function updateAll() {
@@ -780,7 +747,6 @@ function updateAll() {
   if (p.cat === 'skincare') {
     const cap = val('capacity') || '依實際包裝標示';
     full = `${title}\n\n價格：${p.retail}\n規格：${cap}\n\n——————————\n\n${copy}`;
-    updateLabelPreview(title);
   } else {
     const colors = val('colors') || '單一色';
     const specs = val('specs') || 'F';
@@ -789,12 +755,6 @@ function updateAll() {
   }
   get('fullPost').textContent = cleanText(full);
   if (currentEditingId) scheduleAutoSync();
-}
-
-function updateLabelPreview(title) {
-  get('labelPreview').textContent = cleanText(
-    `${title || val('productName')}\n${val('capacity') || '依實際包裝標示'}｜${val('labelOrigin') || '韓國'}\n用途：${val('labelPurpose') || '日常保養／清潔使用'}\n保存期限：${val('labelExpiry') || '詳見產品外盒'}\n責任業者：${val('labelCompany') || '布布韓國工作室'}\n聯絡方式：${val('labelContact') || '@bubukorea'}${val('labelUsage') ? '\n\n' + cleanText(val('labelUsage')) : ''}`
-  );
 }
 
 async function parseVendor() {
@@ -816,7 +776,6 @@ async function parseVendor() {
         selectedCategory: val('category'),
         mode: val('mode'),
         importOptions: {
-          hasChineseLabel: !!(get('hasChineseLabel') && get('hasChineseLabel').checked),
           hasPifFile: !!(get('hasPifFile') && get('hasPifFile').checked),
           isSeaShipping: !!(get('isSeaShipping') && get('isSeaShipping').checked)
         }
@@ -852,12 +811,6 @@ async function parseVendor() {
       if (parsedCategory === 'skincare') set('skincareCost', data.cost || '');
       else set('clothingCost', data.cost || '');
     }
-    set('labelPurpose', cleanText(data.labelPurpose, 'space'));
-    set('labelExpiry', cleanText(data.labelExpiry || '詳見產品外盒', 'space'));
-    set('labelCompany', cleanText(data.labelCompany || '布布韓國工作室', 'space'));
-    set('labelContact', cleanText(data.labelContact || '@bubukorea', 'space'));
-    set('labelOrigin', cleanText(data.labelOrigin || '韓國', 'space'));
-    set('labelUsage', cleanText(data.labelUsage));
     currentCopy = cleanText(data.copy);
     set('manualRetail', ''); set('manualVip', ''); set('manualVvip', '');
     set('priceNote', '');
@@ -945,8 +898,7 @@ async function addTask(silent = false) {
     marketAdvice: get('marketAdvice').innerText,
     time: new Date().toLocaleString(),
     fullPost: get('fullPost').innerText,
-    copy: currentCopy,
-    label: get('labelPreview') ? get('labelPreview').innerText : ''
+    copy: currentCopy
   };
   const { data, error } = await supabaseClient.from('tasks').insert({ content: JSON.stringify(item) }).select('*').single();
   if (error) { alert('雲端新增失敗：' + error.message); return; }
@@ -989,7 +941,6 @@ function renderTasks() {
       <td>${t.estimatedCost || t.cost || ''}<br><span style="font-size:11px;color:#64748b">進貨 ${t.cost || 0}＋分攤 ${t.safeAllocation ?? 20}＋運費 ${t.inboundShipping ?? 0}</span></td>
       <td style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn small gray" onclick="copyTaskPost(${i})">📋 文案</button>
-        <button class="btn small gray" onclick="copyTaskLabel(${i})">🏷️ 標籤</button>
         <button class="btn small" onclick="editTask(${i})">✏️ 編輯</button>
         <button class="btn small" onclick="toggleTask(${i})">✔ 已同步</button>
         <button class="btn small red" onclick="deleteTask(${i})">刪除</button>
@@ -1003,12 +954,6 @@ function copyTaskPost(i) {
   navigator.clipboard.writeText(text).then(() => alert('已複製文案'));
 }
 
-function copyTaskLabel(i) {
-  const t = tasks[i];
-  const text = t.label || '';
-  if (!text) { alert('這筆目前沒有中文標籤'); return; }
-  navigator.clipboard.writeText(text).then(() => alert('已複製中文標籤'));
-}
 
 function editTask(i) {
   const t = tasks[i];
@@ -1051,8 +996,7 @@ async function autoSyncCurrentTask() {
     time: old.time || new Date().toLocaleString(),
     updatedAt: new Date().toLocaleString(),
     fullPost: get('fullPost').innerText,
-    copy: currentCopy,
-    label: get('labelPreview') ? get('labelPreview').innerText : ''
+    copy: currentCopy
   };
   delete updated.id;
   const { error } = await supabaseClient.from('tasks').update({ content: JSON.stringify(updated) }).eq('id', currentEditingId);
@@ -1220,9 +1164,6 @@ function copyPost() {
   navigator.clipboard.writeText(get('fullPost').innerText).then(() => alert('已複製完整貼文'));
 }
 
-function copyLabel() {
-  navigator.clipboard.writeText(get('labelPreview').innerText).then(() => alert('已複製中文標籤'));
-}
 
 
 
@@ -1541,6 +1482,7 @@ async function loadPurchaseRecords() {
     purchaseRecords = data || [];
     renderPurchaseRecords();
     refreshPurchaseMonthOptions();
+    renderPurchaseMonthSummary();
   } catch (e) {
     cloud('進貨紀錄讀取失敗：' + e.message, false);
   }
@@ -1554,48 +1496,147 @@ function decodePurchaseRecord(r){
   const m=raw.match(/^\[BUBU_META shipping=([\d.]+);qty=([\d.]+);payment=([^\]]*) \](.*)$/s);
   return {shipping:m?Number(m[1])||0:Number(r.shipping_amount)||0,quantity:m?Number(m[2])||0:Number(r.total_quantity)||0,payment:m?decodeURIComponent(m[3]||''):String(r.payment_method||''),note:m?m[4]:raw};
 }
+function supplierTypeByName(name){
+  const s=(suppliers||[]).find(x=>x.supplier_name===name);
+  return s?.supplier_type || '未分類';
+}
+function currentPurchaseMonth(){
+  return todayISO().slice(0,7);
+}
+function rowsForPurchaseMonth(month){
+  return (purchaseRecords||[]).filter(r=>String(r.purchase_date||'').slice(0,7)===month);
+}
+function refreshPurchaseMonthOptions(){
+  const el=get('purchaseMonthSelect');
+  if(!el)return;
+  const current=el.value || currentPurchaseMonth();
+  const months=[...new Set((purchaseRecords||[]).map(r=>String(r.purchase_date||'').slice(0,7)).filter(m=>/^\d{4}-\d{2}$/.test(m)))];
+  if(!months.includes(currentPurchaseMonth())) months.push(currentPurchaseMonth());
+  months.sort().reverse();
+  // input[type=month] 可直接輸入任何月份；這裡只確保初始值正確。
+  if(!el.value) el.value=months[0] || currentPurchaseMonth();
+  else if(current) el.value=current;
+}
 function renderPurchaseRecords() {
   const body = get('purchaseBody'); if (!body) return;
-  const month = new Date().toISOString().slice(0,7);
-  const monthRows = purchaseRecords.filter(r => String(r.purchase_date||'').slice(0,7)===month);
+  const month = currentPurchaseMonth();
+  const monthRows = rowsForPurchaseMonth(month);
   const monthTotal = monthRows.reduce((sum,r)=>sum+(Number(r.amount)||0),0);
   const momoTotal = monthRows.filter(r=>String(r.supplier_name||'').toLowerCase().includes('momo')).reduce((sum,r)=>sum+(Number(r.amount)||0),0);
   if(get('monthPurchaseTotal')) get('monthPurchaseTotal').textContent=money(monthTotal);
   const target=12000,pct=Math.min(100,Math.round(momoTotal/target*100));
   if(get('momoProgressText')) get('momoProgressText').textContent=`${money(momoTotal)} / ${money(target)}`;
   if(get('momoProgressBar')) get('momoProgressBar').style.width=pct+'%';
-  if(get('momoProgressNote')) get('momoProgressNote').textContent=momoTotal>=target?'✅ MOMO 本月低消已達成':`尚差 ${money(target-momoTotal)}，目前 ${pct}%`;
-  body.innerHTML=purchaseRecords.slice(0,50).map((r,i)=>{const x=decodePurchaseRecord(r);return `<tr><td>${r.purchase_date||''}</td><td>${r.supplier_name||''}</td><td><b>${money(r.amount||0)}</b></td><td>${money(x.shipping)}</td><td>${x.quantity||0}</td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td><button class="btn small red" onclick="deletePurchaseRecord(${i})">刪除</button></td></tr>`}).join('')||'<tr><td colspan="8" class="subtle">尚未建立進貨紀錄</td></tr>';
+  if(get('momoProgressNote')) get('momoProgressNote').textContent=momoTotal>=target?'✅ MOMO 本月低消已達成':`尚差 ${money(Math.max(0,target-momoTotal))}，目前 ${pct}%`;
+  body.innerHTML=monthRows.slice(0,50).map(r=>{const x=decodePurchaseRecord(r);const id=JSON.stringify(r.id);return `<tr><td>${r.purchase_date||''}</td><td>${r.supplier_name||''}</td><td><b>${money(r.amount||0)}</b></td><td>${money(x.shipping)}</td><td>${x.quantity||0}</td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn small gray" onclick='editPurchaseRecord(${id})'>編輯</button><button class="btn small red" onclick='deletePurchaseRecordById(${id})'>刪除</button></td></tr>`}).join('')||'<tr><td colspan="8" class="subtle">本月尚未建立進貨紀錄</td></tr>';
   renderMonthlyDashboard();
+}
+function renderPurchaseMonthSummary(){
+  const month=val('purchaseMonthSelect') || currentPurchaseMonth();
+  const rows=rowsForPurchaseMonth(month);
+  const subtotal=rows.reduce((a,r)=>a+(Number(r.amount)||0),0);
+  const shipping=rows.reduce((a,r)=>a+decodePurchaseRecord(r).shipping,0);
+  const quantity=rows.reduce((a,r)=>a+decodePurchaseRecord(r).quantity,0);
+  const supplierNames=[...new Set(rows.map(r=>r.supplier_name).filter(Boolean))];
+  if(get('purchaseMonthCount'))get('purchaseMonthCount').textContent=`${rows.length} 筆`;
+  if(get('purchaseMonthSubtotal'))get('purchaseMonthSubtotal').textContent=money(subtotal);
+  if(get('purchaseMonthShipping'))get('purchaseMonthShipping').textContent=money(shipping);
+  if(get('purchaseMonthTotal'))get('purchaseMonthTotal').textContent=money(subtotal+shipping);
+  if(get('purchaseMonthQuantity'))get('purchaseMonthQuantity').textContent=Number(quantity||0).toLocaleString();
+  if(get('purchaseMonthSupplierCount'))get('purchaseMonthSupplierCount').textContent=String(supplierNames.length);
+
+  const bySupplier={};
+  rows.forEach(r=>{const x=decodePurchaseRecord(r);const k=r.supplier_name||'未填供應商';if(!bySupplier[k])bySupplier[k]={amount:0,shipping:0,qty:0,count:0};bySupplier[k].amount+=Number(r.amount)||0;bySupplier[k].shipping+=x.shipping;bySupplier[k].qty+=x.quantity;bySupplier[k].count+=1;});
+  const summary=Object.entries(bySupplier).sort((a,b)=>(b[1].amount+b[1].shipping)-(a[1].amount+a[1].shipping)).map(([name,x])=>`${name}：${x.count}筆｜進貨 ${money(x.amount)}｜運費 ${money(x.shipping)}｜含運 ${money(x.amount+x.shipping)}｜${x.qty}件`).join('\n');
+  if(get('purchaseMonthSupplierSummary'))get('purchaseMonthSupplierSummary').textContent=summary || `${month} 尚無進貨資料。`;
+
+  const body=get('purchaseMonthBody');
+  if(body){
+    body.innerHTML=rows.map(r=>{const x=decodePurchaseRecord(r);const id=JSON.stringify(r.id);return `<tr><td>${r.purchase_date||''}</td><td>${r.supplier_name||''}</td><td>${supplierTypeByName(r.supplier_name)}</td><td><b>${money(r.amount||0)}</b></td><td>${money(x.shipping)}</td><td><b>${money((Number(r.amount)||0)+x.shipping)}</b></td><td>${x.quantity||0}</td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn small gray" onclick='editPurchaseRecord(${id})'>編輯</button><button class="btn small red" onclick='deletePurchaseRecordById(${id})'>刪除</button></td></tr>`}).join('')||'<tr><td colspan="10" class="subtle">此月份尚無進貨紀錄</td></tr>';
+  }
 }
 async function addPurchaseRecord() {
   const supplier_name=val('purchaseSupplier'),amount=Number(val('purchaseAmount'))||0,shipping=Number(val('purchaseShipping'))||0,quantity=Number(val('purchaseQuantity'))||0,payment=val('purchasePayment');
   const purchase_date=normalizePurchaseDate(val('purchaseDate')||todayISO());
   if(!purchase_date){alert('日期格式不正確');return;} if(!supplier_name){alert('請選擇供應商');return;} if(amount<=0){alert('請輸入進貨總金額');return;} if(quantity<=0){alert('請輸入進貨總數量');return;}
   const note=encodePurchaseNote(val('purchaseNote'),shipping,quantity,payment);
-  const {error}=await supabaseClient.from('purchase_records').insert({supplier_name,amount,purchase_date,note});
-  if(error){alert('新增進貨紀錄失敗：'+error.message);return;}
-  ['purchaseAmount','purchaseShipping','purchaseQuantity','purchaseNote'].forEach(id=>set(id,'')); get('purchaseDate').value=todayISO();
-  await loadPurchaseRecords(); if(typeof loadPurchaseArchives==='function')loadPurchaseArchives(); if(typeof reloadPurchaseRecordsForArchive==='function')reloadPurchaseRecordsForArchive(); cloud('✅ 進貨紀錄已儲存',true);
+  const wasEditing=purchaseEditingId!==null;
+  let error;
+  if(wasEditing){
+    ({error}=await supabaseClient.from('purchase_records').update({supplier_name,amount,purchase_date,note}).eq('id',purchaseEditingId));
+  }else{
+    ({error}=await supabaseClient.from('purchase_records').insert({supplier_name,amount,purchase_date,note}));
+  }
+  if(error){alert((purchaseEditingId!==null?'更新':'新增')+'進貨紀錄失敗：'+error.message);return;}
+  const savedMonth=purchase_date.slice(0,7);
+  resetPurchaseForm();
+  if(get('purchaseMonthSelect'))get('purchaseMonthSelect').value=savedMonth;
+  await loadPurchaseRecords();
+  cloud(wasEditing?'✅ 進貨紀錄已更新':'✅ 進貨紀錄已儲存',true);
 }
-
-async function deletePurchaseRecord(i) {
-  const r = purchaseRecords[i];
+function editPurchaseRecord(id){
+  const r=(purchaseRecords||[]).find(x=>String(x.id)===String(id));
+  if(!r)return;
+  const x=decodePurchaseRecord(r);
+  purchaseEditingId=r.id;
+  if(get('purchaseDate'))get('purchaseDate').value=r.purchase_date||todayISO();
+  const supplierEl=get('purchaseSupplier');
+  if(supplierEl && ![...supplierEl.options].some(o=>o.value===r.supplier_name)){
+    const opt=document.createElement('option'); opt.value=r.supplier_name||''; opt.textContent=(r.supplier_name||'未填供應商')+'｜歷史資料'; supplierEl.appendChild(opt);
+  }
+  if(supplierEl)supplierEl.value=r.supplier_name||'';
+  set('purchaseAmount',r.amount||'');
+  set('purchaseShipping',x.shipping||'');
+  set('purchaseQuantity',x.quantity||'');
+  if(get('purchasePayment'))get('purchasePayment').value=x.payment||'匯款';
+  set('purchaseNote',x.note||'');
+  if(get('purchaseSaveBtn'))get('purchaseSaveBtn').textContent='✅ 更新進貨紀錄';
+  if(get('cancelPurchaseEditBtn'))get('cancelPurchaseEditBtn').classList.remove('hidden');
+  window.scrollTo({top:get('purchaseDate')?.getBoundingClientRect().top + window.scrollY - 100,behavior:'smooth'});
+}
+function resetPurchaseForm(){
+  purchaseEditingId=null;
+  ['purchaseAmount','purchaseShipping','purchaseQuantity','purchaseNote'].forEach(id=>set(id,''));
+  if(get('purchaseDate'))get('purchaseDate').value=todayISO();
+  if(get('purchasePayment'))get('purchasePayment').value='匯款';
+  if(get('purchaseSaveBtn'))get('purchaseSaveBtn').textContent='💾 儲存進貨紀錄';
+  if(get('cancelPurchaseEditBtn'))get('cancelPurchaseEditBtn').classList.add('hidden');
+}
+function cancelPurchaseEdit(){resetPurchaseForm();}
+async function deletePurchaseRecordById(id) {
+  const r=(purchaseRecords||[]).find(x=>String(x.id)===String(id));
   if (!r || !confirm(`確定刪除 ${r.supplier_name} ${money(r.amount)}？`)) return;
   const { error } = await supabaseClient.from('purchase_records').delete().eq('id', r.id);
   if (error) { alert('刪除進貨紀錄失敗：' + error.message); return; }
+  if(String(purchaseEditingId)===String(r.id)) resetPurchaseForm();
   await loadPurchaseRecords();
-initV8();
-reloadPurchaseRecordsForArchive();
+  cloud('✅ 進貨紀錄已刪除',true);
 }
-
+async function deletePurchaseRecord(i) {
+  const r=purchaseRecords[i];
+  if(r) return deletePurchaseRecordById(r.id);
+}
+function exportPurchaseMonthExcel(){
+  const month=val('purchaseMonthSelect') || currentPurchaseMonth();
+  const rows=rowsForPurchaseMonth(month);
+  if(!rows.length){alert('這個月份沒有進貨資料可匯出');return;}
+  const out=rows.map(r=>{const x=decodePurchaseRecord(r);return {
+    日期:r.purchase_date||'',供應商:r.supplier_name||'',類型:supplierTypeByName(r.supplier_name),
+    進貨金額:Number(r.amount)||0,運費:x.shipping,含運合計:(Number(r.amount)||0)+x.shipping,
+    總數量:x.quantity,付款方式:x.payment||'',備註:x.note||''
+  }});
+  const ws=XLSX.utils.json_to_sheet(out);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,month+'進貨');
+  XLSX.writeFile(wb,`BUBU_${month}_進貨總表.xlsx`);
+}
 
 
 // V7.4 供應商維護中心覆寫
 function supplierStatusClass(status){return status==='啟用'?'status-active':status==='備案'?'status-backup':status==='淘汰'?'status-retired':'status-paused';}
 function getSupplierActiveList(type='服飾'){return (suppliers||[]).filter(s=>(s.supplier_type||'服飾')===type&&(s.status||'啟用')==='啟用');}
 function refreshTempSupplierOptions(){const sel=get('tempTaskSupplier'); if(!sel)return; const rows=(suppliers||[]).filter(s=>(s.status||'啟用')!=='淘汰'); sel.innerHTML=rows.map(s=>`<option value="${s.supplier_name}">${s.supplier_name}｜${s.supplier_type||'服飾'}｜${s.status||'啟用'}</option>`).join('')||'<option value="">尚無供應商</option>';}
-async function loadSuppliers(){try{const {data,error}=await supabaseClient.from('suppliers').select('*').order('id',{ascending:true}); if(error)throw error; suppliers=(data||[]).map(s=>({...s,status:s.status||(s.is_active===false?'暫停':'啟用'),note:s.note||''})); renderSuppliers(); refreshTempSupplierOptions(); updatePurchaseSupplierOptions();}catch(e){cloud('供應商讀取失敗：'+e.message,false);}}
+async function loadSuppliers(){try{const {data,error}=await supabaseClient.from('suppliers').select('*').order('id',{ascending:true}); if(error)throw error; suppliers=(data||[]).map(s=>({...s,status:s.status||(s.is_active===false?'暫停':'啟用'),note:s.note||''})); renderSuppliers(); refreshTempSupplierOptions(); updatePurchaseSupplierOptions(); if(get('purchaseMonthSelect'))renderPurchaseMonthSummary();}catch(e){cloud('供應商讀取失敗：'+e.message,false);}}
 function renderSuppliers(){const body=get('supplierBody'); if(!body)return; if(get('supplierCount'))get('supplierCount').textContent=suppliers.length; body.innerHTML=(suppliers||[]).map((s,i)=>`<tr><td><b>${s.supplier_name||''}</b></td><td>${s.code||''}</td><td>${s.supplier_type||'服飾'}</td><td><span class="statusPill ${supplierStatusClass(s.status||'啟用')}">${s.status||'啟用'}</span></td><td>${s.note||''}</td><td style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn small gray" onclick="fillSupplierForm(${i})">編輯</button><button class="btn small" onclick="setSupplierStatus(${i},'啟用')">啟用</button><button class="btn small" onclick="setSupplierStatus(${i},'備案')">備案</button><button class="btn small gray" onclick="setSupplierStatus(${i},'暫停')">暫停</button><button class="btn small red" onclick="setSupplierStatus(${i},'淘汰')">淘汰</button><button class="btn small red" onclick="deleteSupplier(${i})">刪除</button></td></tr>`).join('')||'<tr><td colspan="6" class="subtle">尚未建立供應商</td></tr>';}
 function fillSupplierForm(i){const s=suppliers[i]; if(!s)return; set('supplierName',s.supplier_name||''); set('supplierCode',s.code||''); if(get('supplierType'))get('supplierType').value=s.supplier_type||'服飾'; if(get('supplierStatus'))get('supplierStatus').value=s.status||'啟用'; set('supplierNote',s.note||'');}
 async function addSupplier(){const supplier_name=val('supplierName'),code=val('supplierCode'),supplier_type=val('supplierType')||'服飾',status=val('supplierStatus')||'啟用',note=val('supplierNote'); if(!supplier_name){alert('請輸入供應商名稱');return;} const existing=suppliers.find(s=>(s.supplier_name||'')===supplier_name); let error; if(existing)({error}=await supabaseClient.from('suppliers').update({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'}).eq('id',existing.id)); else ({error}=await supabaseClient.from('suppliers').insert({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'})); if(error){alert('供應商儲存失敗：'+error.message);return;} set('supplierName','');set('supplierCode','');set('supplierNote',''); if(get('supplierStatus'))get('supplierStatus').value='啟用'; await loadSuppliers(); cloud('✅ 供應商已儲存',true);}
@@ -1612,7 +1653,7 @@ async function addTempDailyTask(){const dateStr=getTodayTaskDate(),task_name=val
 // V8.0 營運支出與每月摘要（儲存在本機瀏覽器）
 let expenseRecords=JSON.parse(localStorage.getItem('bubu_expenses_v8')||'[]');
 let monthlyMetrics=JSON.parse(localStorage.getItem('bubu_monthly_metrics_v8')||'{}');
-function currentMonth(){return new Date().toISOString().slice(0,7)}
+function currentMonth(){return todayISO().slice(0,7)}
 function addExpenseRecord(){const date=val('expenseDate')||todayISO(),kind=val('expenseKind'),item=val('expenseItem'),amount=Number(val('expenseAmount'))||0,payment=val('expensePayment'),note=val('expenseNote');if(!item){alert('請輸入支出項目');return}if(amount<=0){alert('請輸入正確金額');return}expenseRecords.unshift({id:Date.now(),date,kind,item,amount,payment,note});localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));['expenseItem','expenseAmount','expenseNote'].forEach(id=>set(id,''));renderExpenses();renderMonthlyDashboard();cloud('✅ 支出已儲存',true)}
 function deleteExpenseRecord(id){if(!confirm('確定刪除此筆支出？'))return;expenseRecords=expenseRecords.filter(x=>x.id!==id);localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));renderExpenses();renderMonthlyDashboard()}
 function renderExpenses(){const b=get('expenseBody');if(!b)return;b.innerHTML=expenseRecords.slice(0,80).map(x=>`<tr><td>${x.date}</td><td>${x.kind}</td><td>${x.item}</td><td><b>${money(x.amount)}</b></td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td><button class="btn small red" onclick="deleteExpenseRecord(${x.id})">刪除</button></td></tr>`).join('')||'<tr><td colspan="7" class="subtle">尚未建立支出紀錄</td></tr>'}
@@ -1626,12 +1667,12 @@ supabaseClient
   .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadTasks())
   .subscribe();
 
+initV8();
 loadTasks();
 loadSuppliers();
 loadPurchaseRecords();
 renderTodaySchedule();
 loadDailyTasks();
-if (get('purchaseDate')) get('purchaseDate').value = todayISO();
 updateAll();
 </script>
 </body>
