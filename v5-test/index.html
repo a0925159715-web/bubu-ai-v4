@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>BUBU AI V8.2 精簡營運版</title>
+<title>BUBU AI V8.3 精簡營運版</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
@@ -302,7 +302,7 @@
 
 <div class="topbar">
   <div>
-    <h1>BUBU AI V8.2 精簡營運版</h1>
+    <h1>BUBU AI V8.3 精簡營運版</h1>
     <p>每件安全分攤＋預估入庫運費；一般售價／鐵粉價／VIP會員價完整顯示。</p>
   </div>
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
@@ -539,25 +539,36 @@
   </div>
 
   <div class="card" style="margin-top:16px;background:#0f172a">
-    <div class="sectionTitle"><h2>📊 每月營運摘要</h2><span class="subtle">成本分析與利潤分析先保留，等資料完整再啟用</span></div>
+    <div class="sectionTitle">
+      <h2>🏦 每月國泰對帳</h2>
+      <span class="subtle">依國泰銀行實際入帳逐筆登記；每個月份獨立查看</span>
+    </div>
+
     <div class="grid2">
-      <div><label>月份</label><input id="dashboardMonth" type="month" onchange="renderMonthlyDashboard()"/></div>
-      <div><label>訂單數（單數）</label><input id="monthlyOrders" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
-      <div><label>商品總件數</label><input id="monthlyItems" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
-      <div><label>服飾件數</label><input id="monthlyClothing" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
-      <div><label>保養品件數</label><input id="monthlySkincare" type="number" min="0" step="1" oninput="saveMonthlyMetrics()"/></div>
-      <div><label>營業額</label><input id="monthlyRevenue" type="number" min="0" oninput="saveMonthlyMetrics()"/></div>
+      <div><label>查詢月份</label><input id="cathayMonth" type="month" onchange="renderCathayReconcile()"/></div>
+      <div><label>入帳日期</label><input id="cathayDate" type="date"/></div>
+      <div><label>入帳金額</label><input id="cathayAmount" type="number" min="0" placeholder="例如 3680"/></div>
+      <div><label>入帳來源</label><select id="cathaySource"><option value="客人匯款">客人匯款</option><option value="平台撥款">平台撥款</option><option value="LINE／社群收款">LINE／社群收款</option><option value="其他">其他</option></select></div>
+      <div><label>對帳狀態</label><select id="cathayStatus"><option value="已核對">已核對</option><option value="待確認">待確認</option></select></div>
+      <div><label>備註</label><input id="cathayNote" placeholder="例如：客人姓名／平台批次／訂單備註"/></div>
     </div>
+
+    <button class="btn small teal" onclick="addCathayRecord()">💾 儲存國泰入帳</button>
+    <button class="btn small purple" onclick="exportCathayMonthExcel()">📤 匯出該月份對帳 Excel</button>
+
     <div class="statGrid" style="margin-top:12px">
-      <div class="statBox"><div class="label">平均每單件數</div><div id="dashItemsPerOrder" class="num">0</div></div>
-      <div class="statBox"><div class="label">平均客單價</div><div id="dashAvgOrder" class="num">NT$0</div></div>
-      <div class="statBox"><div class="label">平均商品售價</div><div id="dashAvgItem" class="num">NT$0</div></div>
-      <div class="statBox"><div class="label">本月商品進貨</div><div id="dashPurchase" class="num">NT$0</div></div>
-      <div class="statBox"><div class="label">本月進貨運費</div><div id="dashShipping" class="num">NT$0</div></div>
-      <div class="statBox"><div class="label">本月營運支出</div><div id="dashOperating" class="num">NT$0</div></div>
-      <div class="statBox"><div class="label">本月設備支出</div><div id="dashEquipment" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">本月入帳總額</div><div id="cathayMonthTotal" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">已核對金額</div><div id="cathayCheckedTotal" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">待確認金額</div><div id="cathayPendingTotal" class="num">NT$0</div></div>
+      <div class="statBox"><div class="label">本月入帳筆數</div><div id="cathayMonthCount" class="num">0</div></div>
     </div>
-    <div class="preview" style="margin-top:12px"><b>成本分析：</b>先保留。未來會用「商品進貨＋運費＋營運支出」看本月總投入。<br><b>利潤分析：</b>先保留。等銷售成本資料完整後，再計算毛利與真正淨利。</div>
+
+    <div style="overflow-x:auto;margin-top:10px">
+      <table class="miniTable">
+        <thead><tr><th>日期</th><th>入帳金額</th><th>來源</th><th>狀態</th><th>備註</th><th>動作</th></tr></thead>
+        <tbody id="cathayBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
@@ -1291,7 +1302,6 @@ function renderPurchaseRecords() {
   if(get('momoProgressBar')) get('momoProgressBar').style.width=pct+'%';
   if(get('momoProgressNote')) get('momoProgressNote').textContent=momoTotal>=target?'✅ MOMO 本月低消已達成':`尚差 ${money(Math.max(0,target-momoTotal))}，目前 ${pct}%`;
   body.innerHTML=monthRows.slice(0,50).map(r=>{const x=decodePurchaseRecord(r);const id=JSON.stringify(r.id);return `<tr><td>${r.purchase_date||''}</td><td>${r.supplier_name||''}</td><td><b>${money(r.amount||0)}</b></td><td>${money(x.shipping)}</td><td>${x.quantity||0}</td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn small gray" onclick='editPurchaseRecord(${id})'>編輯</button><button class="btn small red" onclick='deletePurchaseRecordById(${id})'>刪除</button></td></tr>`}).join('')||'<tr><td colspan="8" class="subtle">本月尚未建立進貨紀錄</td></tr>';
-  renderMonthlyDashboard();
 }
 function renderPurchaseMonthSummary(){
   const month=val('purchaseMonthSelect') || currentPurchaseMonth();
@@ -1405,16 +1415,20 @@ async function deleteSupplier(i){const s=suppliers[i]; if(!s||!confirm(`確定�
 async function seedDefaultSuppliers(){const defaults=[['CP','米亞','服飾','啟用',''],['CQ','Circle','服飾','啟用',''],['CZ','米淇','服飾','啟用',''],['CY','宜美','服飾','啟用',''],['MK','MK smile','服飾','啟用',''],['MC','MC COKA','服飾','啟用',''],['SD','SD批發','保養品','啟用',''],['CF','727','服飾','備案','可視情況巡查'],['CE','宜琳','服飾','啟用',''],['CC','APRIL','服飾','啟用',''],['CB','依玥','服飾','啟用',''],['PD','拼多多','服飾','備案','不固定排程，有空再巡']]; for(const [code,supplier_name,supplier_type,status,note] of defaults){if(!suppliers.find(s=>s.supplier_name===supplier_name)) await supabaseClient.from('suppliers').insert({code,supplier_name,supplier_type,status,note,is_active:status!=='淘汰'});} await loadSuppliers(); cloud('✅ 已載入預設供應商',true);}
 
 
-// V8.0 營運支出與每月摘要（儲存在本機瀏覽器）
+// V8.3 營運支出＋每月國泰對帳（儲存在本機瀏覽器）
 let expenseRecords=JSON.parse(localStorage.getItem('bubu_expenses_v8')||'[]');
-let monthlyMetrics=JSON.parse(localStorage.getItem('bubu_monthly_metrics_v8')||'{}');
+let cathayRecords=JSON.parse(localStorage.getItem('bubu_cathay_reconcile_v83')||'[]');
 function currentMonth(){return todayISO().slice(0,7)}
-function addExpenseRecord(){const date=val('expenseDate')||todayISO(),kind=val('expenseKind'),item=val('expenseItem'),amount=Number(val('expenseAmount'))||0,payment=val('expensePayment'),note=val('expenseNote');if(!item){alert('請輸入支出項目');return}if(amount<=0){alert('請輸入正確金額');return}expenseRecords.unshift({id:Date.now(),date,kind,item,amount,payment,note});localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));['expenseItem','expenseAmount','expenseNote'].forEach(id=>set(id,''));renderExpenses();renderMonthlyDashboard();cloud('✅ 支出已儲存',true)}
-function deleteExpenseRecord(id){if(!confirm('確定刪除此筆支出？'))return;expenseRecords=expenseRecords.filter(x=>x.id!==id);localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));renderExpenses();renderMonthlyDashboard()}
+function addExpenseRecord(){const date=val('expenseDate')||todayISO(),kind=val('expenseKind'),item=val('expenseItem'),amount=Number(val('expenseAmount'))||0,payment=val('expensePayment'),note=val('expenseNote');if(!item){alert('請輸入支出項目');return}if(amount<=0){alert('請輸入正確金額');return}expenseRecords.unshift({id:Date.now(),date,kind,item,amount,payment,note});localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));['expenseItem','expenseAmount','expenseNote'].forEach(id=>set(id,''));renderExpenses();cloud('✅ 支出已儲存',true)}
+function deleteExpenseRecord(id){if(!confirm('確定刪除此筆支出？'))return;expenseRecords=expenseRecords.filter(x=>x.id!==id);localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));renderExpenses()}
 function renderExpenses(){const b=get('expenseBody');if(!b)return;b.innerHTML=expenseRecords.slice(0,80).map(x=>`<tr><td>${x.date}</td><td>${x.kind}</td><td>${x.item}</td><td><b>${money(x.amount)}</b></td><td>${x.payment||'-'}</td><td>${x.note||''}</td><td><button class="btn small red" onclick="deleteExpenseRecord(${x.id})">刪除</button></td></tr>`).join('')||'<tr><td colspan="7" class="subtle">尚未建立支出紀錄</td></tr>'}
-function saveMonthlyMetrics(){const m=val('dashboardMonth')||currentMonth();monthlyMetrics[m]={orders:Number(val('monthlyOrders'))||0,items:Number(val('monthlyItems'))||0,clothing:Number(val('monthlyClothing'))||0,skincare:Number(val('monthlySkincare'))||0,revenue:Number(val('monthlyRevenue'))||0};localStorage.setItem('bubu_monthly_metrics_v8',JSON.stringify(monthlyMetrics));renderMonthlyDashboard(false)}
-function renderMonthlyDashboard(loadInputs=true){const m=val('dashboardMonth')||currentMonth();if(loadInputs){const x=monthlyMetrics[m]||{};set('monthlyOrders',x.orders||'');set('monthlyItems',x.items||'');set('monthlyClothing',x.clothing||'');set('monthlySkincare',x.skincare||'');set('monthlyRevenue',x.revenue||'')}const orders=Number(val('monthlyOrders'))||0,items=Number(val('monthlyItems'))||0,revenue=Number(val('monthlyRevenue'))||0;const prs=(purchaseRecords||[]).filter(r=>String(r.purchase_date||'').slice(0,7)===m);const purchase=prs.reduce((a,r)=>a+(Number(r.amount)||0),0),shipping=prs.reduce((a,r)=>a+decodePurchaseRecord(r).shipping,0);const ex=expenseRecords.filter(x=>String(x.date||'').slice(0,7)===m);const operating=ex.filter(x=>x.kind==='營運支出').reduce((a,x)=>a+(Number(x.amount)||0),0),equipment=ex.filter(x=>x.kind==='設備／一次性採購').reduce((a,x)=>a+(Number(x.amount)||0),0);if(get('dashItemsPerOrder'))get('dashItemsPerOrder').textContent=orders?(items/orders).toFixed(2)+' 件':'0';if(get('dashAvgOrder'))get('dashAvgOrder').textContent=money(orders?revenue/orders:0);if(get('dashAvgItem'))get('dashAvgItem').textContent=money(items?revenue/items:0);if(get('dashPurchase'))get('dashPurchase').textContent=money(purchase);if(get('dashShipping'))get('dashShipping').textContent=money(shipping);if(get('dashOperating'))get('dashOperating').textContent=money(operating);if(get('dashEquipment'))get('dashEquipment').textContent=money(equipment)}
-function initV8(){const t=todayISO();if(get('purchaseDate'))get('purchaseDate').value=t;if(get('expenseDate'))get('expenseDate').value=t;if(get('dashboardMonth'))get('dashboardMonth').value=currentMonth();renderExpenses();renderMonthlyDashboard()}
+function addCathayRecord(){const date=val('cathayDate')||todayISO(),amount=Number(val('cathayAmount'))||0,source=val('cathaySource')||'其他',status=val('cathayStatus')||'待確認',note=val('cathayNote');if(amount<=0){alert('請輸入正確的入帳金額');return;}const row={id:Date.now(),date,amount,source,status,note};cathayRecords.unshift(row);localStorage.setItem('bubu_cathay_reconcile_v83',JSON.stringify(cathayRecords));if(get('cathayMonth'))get('cathayMonth').value=date.slice(0,7);set('cathayAmount','');set('cathayNote','');renderCathayReconcile();cloud('✅ 國泰入帳已儲存',true)}
+function deleteCathayRecord(id){if(!confirm('確定刪除這筆國泰入帳紀錄？'))return;cathayRecords=cathayRecords.filter(x=>x.id!==id);localStorage.setItem('bubu_cathay_reconcile_v83',JSON.stringify(cathayRecords));renderCathayReconcile()}
+function toggleCathayStatus(id){const row=cathayRecords.find(x=>x.id===id);if(!row)return;row.status=row.status==='已核對'?'待確認':'已核對';localStorage.setItem('bubu_cathay_reconcile_v83',JSON.stringify(cathayRecords));renderCathayReconcile()}
+function rowsForCathayMonth(month){return cathayRecords.filter(x=>String(x.date||'').slice(0,7)===month)}
+function renderCathayReconcile(){const month=val('cathayMonth')||currentMonth();const rows=rowsForCathayMonth(month).sort((a,b)=>String(b.date).localeCompare(String(a.date))||b.id-a.id);const total=rows.reduce((a,x)=>a+(Number(x.amount)||0),0);const checked=rows.filter(x=>x.status==='已核對').reduce((a,x)=>a+(Number(x.amount)||0),0);const pending=total-checked;if(get('cathayMonthTotal'))get('cathayMonthTotal').textContent=money(total);if(get('cathayCheckedTotal'))get('cathayCheckedTotal').textContent=money(checked);if(get('cathayPendingTotal'))get('cathayPendingTotal').textContent=money(pending);if(get('cathayMonthCount'))get('cathayMonthCount').textContent=String(rows.length);const body=get('cathayBody');if(body)body.innerHTML=rows.map(x=>`<tr><td>${x.date||''}</td><td><b>${money(x.amount)}</b></td><td>${x.source||''}</td><td><span class="statusPill ${x.status==='已核對'?'status-active':'status-backup'}">${x.status||'待確認'}</span></td><td>${x.note||''}</td><td style="display:flex;gap:5px;flex-wrap:wrap"><button class="btn small gray" onclick="toggleCathayStatus(${x.id})">${x.status==='已核對'?'改待確認':'設已核對'}</button><button class="btn small red" onclick="deleteCathayRecord(${x.id})">刪除</button></td></tr>`).join('')||'<tr><td colspan="6" class="subtle">此月份尚無國泰入帳紀錄</td></tr>'}
+function exportCathayMonthExcel(){const month=val('cathayMonth')||currentMonth();const rows=rowsForCathayMonth(month);if(!rows.length){alert('這個月份沒有國泰對帳資料可匯出');return;}const out=rows.map(x=>({入帳日期:x.date||'',入帳金額:Number(x.amount)||0,入帳來源:x.source||'',對帳狀態:x.status||'',備註:x.note||''}));const ws=XLSX.utils.json_to_sheet(out);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,month+'國泰對帳');XLSX.writeFile(wb,`BUBU_${month}_國泰對帳.xlsx`)}
+function initV8(){const t=todayISO();if(get('purchaseDate'))get('purchaseDate').value=t;if(get('expenseDate'))get('expenseDate').value=t;if(get('cathayDate'))get('cathayDate').value=t;if(get('cathayMonth'))get('cathayMonth').value=currentMonth();renderExpenses();renderCathayReconcile()}
 
 // 啟動
 supabaseClient
