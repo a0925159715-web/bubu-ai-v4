@@ -308,6 +308,16 @@
   <span id="cloudStatus" class="cloud">雲端連線中...</span>
 </div>
 
+<nav class="toolbar" aria-label="工作頁面" style="margin:16px 0">
+  <button id="listingTab" class="btn purple" onclick="switchPage('listing')">🛍️ 商品上架</button>
+  <button id="purchaseTab" class="btn gray" onclick="switchPage('purchase')">📦 進貨後台</button>
+</nav>
+<div id="listingPage">
+<div class="card" style="margin-bottom:16px">
+  <h2>剛剛提供的四款商品內文草稿</h2>
+  <div class="subtle">點商品可載入原文、成本與三層價格；檢查後按「儲存到上架工作台」。</div>
+  <div id="recoveredDraftList" class="toolbar"></div>
+</div>
 
 <div class="grid">
 
@@ -372,6 +382,17 @@
       <input id="capacity" oninput="updateAll()"/>
     </div>
 
+    <div class="checkPanel" style="margin-top:12px">
+      <div class="checkPanelTitle">愛+1 商品圖片</div>
+      <label>從手機或電腦選照片（最多六張，第一張為主圖）</label>
+      <input id="productImages" type="file" accept="image/*" multiple onchange="uploadProductImages(this.files)"/>
+      <div id="imageUploadStatus" class="subtle">請先選照片；上傳成功後會自動填入愛+1圖片欄。</div>
+      <details style="margin-top:8px"><summary>已有圖片網址時使用</summary>
+        <label>圖片網址（一行一張）</label>
+        <textarea id="imageUrls" placeholder="https://..." oninput="scheduleAutoSync()"></textarea>
+      </details>
+    </div>
+
     <div id="importInfoBox" class="checkPanel hidden">
       <div class="checkPanelTitle">保養品公開資訊勾選</div>
       <div class="checkRow">
@@ -408,6 +429,7 @@
   <h2>③ 完整貼文預覽</h2>
   <div id="fullPost" class="preview">請先貼廠商原文，按「AI 自動整理商品」。</div>
   <button class="btn gray" onclick="copyPost()">📋 一鍵複製完整貼文</button>
+  <button class="btn teal" onclick="addTask()">💾 儲存到上架工作台</button>
 </div>
 
 
@@ -416,6 +438,7 @@
   <h2>⑥ 雲端同步工作台</h2>
   <div class="toolbar">
     <button class="btn small purple" onclick="exportAiPlusExcel()">📤 匯出愛+1 Excel</button>
+    <span id="exportStatus" class="subtle" role="status">按下後會下載 Excel；目前編輯中的商品也可直接匯出。</span>
   </div>
   <div style="overflow-x:auto">
     <table>
@@ -427,6 +450,8 @@
   </div>
 </div>
 
+</div>
+<div id="purchasePage" class="hidden">
 <div class="card" style="margin-top:16px">
   <div class="sectionTitle">
     <h2>⑤ 供應商維護中心 V8.0</h2>
@@ -571,11 +596,13 @@
     </div>
   </div>
 </div>
+</div>
 
+<script id="recoveredDraftData" type="application/json">[{"title": "韓國LG太極製藥 深度滋養足部龜裂修護軟膏60g", "category": "skincare", "cost": 199, "capacity": "60g；有效期限：2029.06月", "retail": 350, "vip": 320, "vvip": 310, "copy": "天天忍受腳跟乾裂撕裂的疼痛嗎 😫\n穿涼鞋露腳跟總是感到害羞尷尬 🙈\n不管是秋冬乾燥 還是長年累積的厚重老廢角質 🧼\n光靠一般的日常身體乳液根本不夠力 💔\n\n韓國 LG 太極製藥深度滋養足部龜裂修護軟膏 🏥✨\n出自韓國權威大廠 LG 太極製藥的專業配方 👑\n專為嚴重乾裂 厚角質與極度乾燥肌膚量身打造 🛡️\n市面上很多足霜塗完只停留在肌膚表面黏膩不吸收 🙅‍♀️\n\n這款修護軟膏採用大藥廠等級的黃金修護比例 💡\n特別添加高達 25% 的高濃度尿素成分 🧪\n能精準滲透並溫和軟化腳跟 手肘與膝蓋的頑固厚角質 🪵\n\n深度補水保濕 快速撫平龜裂與粗糙縫隙 🌊\n同時能有效改善異位性皮膚炎與老年性乾皮症引發的乾燥不適 👵👴\n\n更重磅加入頂級滋養成分角鯊烷 💧\n在肌膚表面形成一道鎖水保護膜 🔒\n牢牢鎖住水分 防止水分再次流失 🛡️\n讓乾裂的腳跟重新恢復軟嫩柔滑 ☁️\n\n搭配維他命原 B5 D-泛醇成分 🌿\n深層修護受損肌膚 帶來極致的舒緩與穩定力量 💕\n\n使用方法非常簡單順手 🎈\n每天都可以根據需求多次使用 🕒\n在洗澡後或清潔腳跟 手肘 膝蓋等粗糙部位並擦乾後 🚿\n\n取適量軟膏塗抹於乾裂部位 🖐️\n溫和充分按摩至肌膚完全吸收即可 ✨\n溫馨提醒塗抹時須避開開放性傷口喔 ⚠️\n\n擺脫粗糙死皮與龜裂疼痛 👡✨\n重新找回像嬰兒般滑嫩水潤的雙腳 👶\n選擇韓國 LG 太極製藥深度滋養足部龜裂修護軟膏 60g 💛\n給全家人的雙腳最安心尊貴的大廠級呵護 👑🌸"}, {"title": "韓國Chunho N Care 熬夜加班護肝救星水飛薊護肝錠30錠", "category": "skincare", "cost": 235, "capacity": "30錠/盒；有效期限：2027.08月", "retail": 400, "vip": 360, "vvip": 350, "copy": "每天熬夜加班搞得臉色發黃 體力透支 總是覺得累嗎 😫\n明明睡眠時間差不多 早上醒來還是滿身疲憊感 🥱\n體內毒素累積 肝臟早已發出沉重的超載警訊 ⚠️\n韓國 40 年知名保健大廠 Chunho N Care 🏛️\n推出熬夜加班護肝救星水飛薊護肝錠 30 錠 💊✨\n\n專為現代高壓 經常熬夜 應酬多與代謝差的族群量身打造 🛡️\n精準照顧肝臟健康 嚴選頂級奶薊草萃取物 🌿\n每錠含有高達 130mg 的關鍵活性成分水飛薊素 🧪\n能幫助維護肝臟機能 促進代謝與體內防護網 🏰\n\n告別累積已久 的沉重感 重新找回清爽有勁的亮麗狀態 🌟\n光是護肝還不夠 體內能量生成更是補充活力的關鍵 ⚡️\n特別重磅嚴選世界知名德國 DSM 頂級原料 🇩🇪\n一次補齊維他命 B1 維他命 B2 與維他命 B6 三大 B 族群 💛\n\n100% 滿足每日所需 영양성분基準值 📈\n完美參與蛋白質與胺基酸利用 促進體內能量正常生成 🔋\n更加入關鍵維他命 B6 幫助維持血液中同半胱胺酸的正常水平 🩸\n\n拒絕複雜過量的成分堆疊 🙅‍♂️\n採用科學無重複功能性的體系化配方設計 🔬\n打造兼具多重複合機能的專業級健康機能食品 💊\n單顆獨立 PTP 鋁箔包裝 隔絕空氣與濕氣 🔒\n\n乾淨衛生 方便隨身放在包包或辦公桌抽屜 💼\n隨時隨地輕鬆補充 一天一錠無負擔 🎈\n不再讓熬夜抽乾你的體力與健康 🛑\n\n為辛苦工作的自己與家人補足滿滿肝動力 🔥\n選擇韓國 Chunho N Care 熬夜加班護肝救星水飛薊護肝錠 30 錠 💛\n幫你打通精神能量開關 每天醒來都神清氣爽 ☀️✨"}, {"title": "韓國SKIN627 韓國皮膚科指定每日急救面膜22ml(10片/組)", "category": "skincare", "cost": 199, "capacity": "22ml*10片/組；有效期限：2028.10月", "retail": 350, "vip": 320, "vvip": 310, "copy": "皮膚科門診級別的每日護膚新革命 🏥✨\n換季泛紅 熬夜暗沉 乾癢脫皮 粗糙鬆弛 😫\n面對各種突發的肌膚問題 總是找不到安心有效的急救方案嗎 😭\n\n來自韓國專業研發品牌 SKIN627 🧬\n推出韓國皮膚科指定每日急救面膜 💉✨\n每片富含 22ml 高濃縮診所級精華 💧\n一組 10 片 每天十分鐘 給肌膚最精準高效的院線級照顧 👑\n\n許多傳統面膜精華液只停留在肌膚表層 黏膩難吸收 🙅‍♀️\nSKIN627 採用高滲透親膚載體技術 🚀\n將豐富的高活性營養因子迅速帶入肌膚底層 🌊\n\n搭配極致服貼的低敏親膚面膜布 ☁️\n完美包覆全臉線條 無死角注入修護能量 💎\n通過韓國敏感肌測試 溫和不刺激 🛡️\n讓你在家就能享受韓國醫美級的精緻護膚療程 💆‍♀️✨\n\n針對不同肌膚情境 SKIN627 推出四款專效急救處方 🎯\n精準打擊各種肌膚痛點 煥發健康水嫩光采 🌟\n\n💚 積雪草綠茶舒敏鎮靜面膜 💚\n專為敏感肌 換季泛紅 曝曬後急救研發 🌿\n高濃度積雪草萃取 ✕ 綠茶多酚兩大修護王者 🍃\n能瞬間降低肌膚表皮溫度 舒緩乾癢與不適感 ❄️\n鎮靜消炎 穩固肌膚屏障 築起天然保護膜 🛡️\n修護受損角質 讓抓狂的叛逆肌膚秒恢復平靜柔嫩 ☁️✨\n\n💙 神經醯胺B5保濕修護面膜 💙\n乾肌脫皮與沙漠肌的終極救星 🌵🌊\n強效神經醯胺 ✕ 專利維他命原 B5 D-泛醇 💧\n直擊肌膚乾燥核心 補水 鎖水 補脂三位一體 🔒\n修補受損的皮脂膜 打造堅固的水分防護牆 🏰\n讓乾燥粗糙的肌膚重獲澎沛水感 恢復軟嫩 Q 彈 💦👶\n\n🩷 膠原蛋白胜肽彈潤緊實面膜 🩷\n膠原蛋白流失 臉部輪廓鬆弛膠原感不再嗎 🥺\n小分子水解膠原蛋白 ✕ 多重複合胜肽專利 🧬\n能深入肌底補充彈力營養 撫平細紋與乾紋 📈\n提升肌膚彈性與緊緻度 撐起下垂鬆弛的輪廓線 📐\n喚醒肌膚年輕活力 🌸✨\n\n💛 維他命B3淨白提亮濾鏡面膜 💛\n熬夜追劇 氣色暗沉 曬後色素沉澱必備 🌙☀️\n高純度維他命 B3 菸鹼醯胺 ✕ 多重維生素精華 💛\n抑制黑色素生成 改善膚色不均與暗沉蠟黃 💡\n由內而外亮白透光 宛如隨身開啟美肌濾鏡 📸✨\n讓肌膚重新找回淨白 剔透 閃耀的發光光采 🌟\n\n每日只需 10 到 15 分鐘 ⏱️\n告別繁瑣步驟 輕鬆打造韓國女星同款水光肌 👑\n無論是日常基礎保養 還是重要場合前的敷臉急救 🎈\n\n韓國 SKIN627 韓國皮膚科指定每日急救面膜 22ml 10片組 🏥是你最值得信賴的專業美肌處方箋 💛🌸"}, {"title": "韓國Bellflower 紅蔘水66%蔘萃琥珀彈潤蜜光精華30ml", "category": "skincare", "cost": 189, "capacity": "30ml；有效期限：2027.03月", "retail": 340, "vip": 310, "vvip": 300, "copy": "🍂 入秋後，肌膚需要的不只是補水，而是多一點「養分感」\n天氣開始轉涼，最先感覺到季節變化的往往就是肌膚\n早晚溫差拉大、空氣中的乾燥感慢慢增加，原本夏天只要簡單補水就能維持的膚況\n到了秋冬開始容易出現乾燥、粗糙，甚至整張臉看起來少了光澤與柔嫩感\n這時候，比起一味把乳霜越擦越厚，更適合在保養前段加入一瓶兼具水潤與滋養感的精華\nBellflower這瓶最吸引人的地方，就在它沒有把紅蔘當作點綴\n配方直接以66%紅蔘水作為核心基底，再加入1%紅蔘萃取\n將韓系保養中經典的紅蔘潤養概念，做成一瓶每天早晚都能使用的精華\n不是厚重的韓方油潤感，而是一種更細緻、更適合現代日常保養的琥珀水潤感🍯\n\n🔴 從基底「水」開始，就是紅蔘的潤養\n一般看到紅蔘保養，很容易只注意「有沒有添加紅蔘萃取」\n但這瓶真正漂亮的地方，是它直接從精華基底下手\n高比例紅蔘水搭配紅蔘萃取，讓整瓶的保養方向非常明確：針對乾燥之後容易顯得粗糙、黯淡、缺乏生氣的膚況，補充水分的同時，也帶來更有存在感的滋養與柔潤\n尤其是秋冬肌膚常有的那種——\n明明擦了保養品，臉卻還是看起來乾乾的、沒有光澤\n這種時候需要的其實不只是表面濕潤，而是把柔軟度與潤澤感一起照顧好\n當膚觸變得柔嫩細緻，乾燥造成的粗糙感降低\n肌膚自然比較容易呈現那種飽滿、柔亮、有精神的光澤感\n這也是這瓶精華所呈現的「蜜光」魅力——\n不是油亮，而是肌膚被好好潤養後透出來的光✨\n\n🍯 琥珀色精華＋淡淡紅蔘香，連保養過程都有記憶點\n它不是那種毫無個性的透明保濕精華\n精華本身帶著漂亮的深橙琥珀色澤，使用時還能聞到淡淡的紅蔘香氣\n不是濃厚到像傳統韓方用品的味道，而是在塗抹時輕輕帶出紅蔘特有的氣息\n讓「紅蔘精華」這件事不只停留在成分表，而是從顏色、香氣到使用感都有自己的辨識度\n尤其晚上洗完臉後使用，琥珀色精華在肌膚上推開，再接續乳霜\n會比單純擦一瓶無色無味的保濕精華，多出一種正在好好養膚的儀式感\n這點其實很值得寫，因為保養品最後每天接觸到的，不只是成分數字，還包括它帶來的感官體驗\n\n💧 8重玻尿酸，把紅蔘的「養」接上肌膚真正需要的「水」\n紅蔘是這瓶的靈魂，但配方並沒有因此忽略保濕基本功\n另外加入8種玻尿酸，搭配甘油等保濕成分\n讓紅蔘的滋養特色之外，再把肌膚需要的水潤感補完整\n所以擦完不是只有「很營養」的印象，而是能感受到肌膚變得比較柔軟、水嫩\n摸起來少一點乾燥時的粗粗觸感\n對於不喜歡秋冬一開始就使用非常厚重保養的人來說，這種搭配尤其適合：\n先用精華補水、潤養 → 再依自己的膚質搭配乳液或乳霜\n保養可以做得足夠，膚感卻不用一層一層厚到令人有負擔\n\n🌱 紅蔘之外，還藏著一組嫩芽植萃\n如果只看到紅蔘，其實還低估了這瓶的配方\n裡面另外搭配小麥苗、紫花苜蓿、花椰菜、高麗菜、蘿蔔籽、油菜等嫩芽植物來源萃取\n以及尿囊素等保養成分\n這些成分不需要硬搶紅蔘的主角位置，而是放在整體配方裡\n陪著保濕系統一起照顧肌膚的柔嫩與舒適度\n所以它給人的感覺不是「紅蔘濃度很高，所以其他都不重要」，而是：\n紅蔘建立滋養特色，玻尿酸補足水潤，植物萃取再把整體保養做得更完整\n\n✨ 越接近秋冬，越能感受到它存在的理由\n這瓶其實不是靠非常複雜的噱頭取勝\n它最迷人的地方，是把韓系紅蔘保養原本容易給人「濃、厚、成熟」的印象\n轉成了一瓶水潤、柔嫩、有光澤感的日常精華\n白天使用，可以在上妝前先替肌膚補足柔潤度\n晚上使用，則很適合在化妝水之後、乳霜之前，慢慢按摩到吸收\n\n尤其推薦給最近開始發現肌膚容易乾、摸起來不夠細緻、光澤感下降\n或單純玻尿酸保濕已經覺得少了一點滋養感的人\n從高比例紅蔘水開始，加入紅蔘萃取、8重玻尿酸與嫩芽植萃\n再加上那抹漂亮的琥珀色澤與淡淡紅蔘香氣——\n🍂 它不是把秋冬保養做得更厚，而是把每天需要的水潤與滋養，做得更有質感\n\nBellflower 紅蔘水琥珀彈潤蜜光精華\n讓秋冬肌膚少一點乾燥疲態，多一點柔嫩、飽滿與自然透出的潤澤光采"}]</script>
 <script>
 const SUPABASE_URL = 'https://xkjayekdbezakvnyjvwu.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_6arvG__i8D6QAuP3MgV_7A_cmjmxzg_';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 let currentCopy = '', parsedCategory = 'clothing', lastAutoAddedKey = '';
 let tasks = [], currentEditingId = null, autoSaveTimer = null;
@@ -587,6 +614,86 @@ const val = id => get(id).value.trim();
 const set = (id, v) => { get(id).value = v || ''; };
 const ceil10 = n => Math.ceil((Number(n) || 0) / 10) * 10;
 const money = n => 'NT$' + Math.round(Number(n) || 0).toLocaleString();
+const recoveredDrafts = JSON.parse(get('recoveredDraftData').textContent || '[]');
+
+function renderRecoveredDrafts() {
+  const box = get('recoveredDraftList');
+  recoveredDrafts.forEach((draft, index) => {
+    const button = document.createElement('button');
+    button.className = 'btn small gray';
+    button.textContent = draft.title;
+    button.onclick = () => loadRecoveredDraft(index);
+    box.appendChild(button);
+  });
+}
+
+function loadRecoveredDraft(index) {
+  const draft = recoveredDrafts[index];
+  if (!draft) return;
+  currentEditingId = null;
+  clearTimeout(autoSaveTimer);
+  set('vendorCode', '');
+  set('mode', 'taiwan');
+  set('category', draft.category);
+  set('productName', draft.title);
+  set('skincareCost', draft.cost);
+  set('capacity', draft.capacity);
+  set('manualRetail', draft.retail);
+  set('manualVip', draft.vip);
+  set('manualVvip', draft.vvip);
+  set('imageUrls', '');
+  set('rawText', draft.copy);
+  currentCopy = draft.copy;
+  updateAll();
+  get('imageUploadStatus').textContent = '內文已載入；照片尚未連結。請檢查內容與圖片後儲存。';
+  get('fullPost').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function switchPage(page) {
+  const showPurchase = page === 'purchase';
+  get('listingPage').classList.toggle('hidden', showPurchase);
+  get('purchasePage').classList.toggle('hidden', !showPurchase);
+  get('listingTab').className = 'btn ' + (showPurchase ? 'gray' : 'purple');
+  get('purchaseTab').className = 'btn ' + (showPurchase ? 'purple' : 'gray');
+  if (location.hash !== (showPurchase ? '#purchase' : '#listing')) {
+    history.replaceState(null, '', showPurchase ? '#purchase' : '#listing');
+  }
+}
+
+function productImageUrls() {
+  return val('imageUrls').split(/[\r\n]+/).map(s => s.trim()).filter(Boolean).slice(0, 6);
+}
+
+async function uploadProductImages(files) {
+  const chosen = Array.from(files || []);
+  if (!chosen.length) return;
+  const status = get('imageUploadStatus');
+  const existing = productImageUrls();
+  if (existing.length + chosen.length > 6) {
+    status.textContent = '愛+1 最多接收一張主圖及五張其他圖片，請減少張數。';
+    return;
+  }
+  status.textContent = `正在上傳 ${chosen.length} 張照片…`;
+  const uploaded = [];
+  try {
+    for (const file of chosen) {
+      if (!file.type.startsWith('image/')) throw new Error('請選擇圖片檔');
+      const suffix = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const path = `products/${Date.now()}-${crypto.randomUUID()}.${suffix}`;
+      const { error } = await supabaseClient.storage.from('product-images').upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw error;
+      const { data } = supabaseClient.storage.from('product-images').getPublicUrl(path);
+      uploaded.push(data.publicUrl);
+      set('imageUrls', [...existing, ...uploaded].join('\n'));
+      if (currentEditingId) await autoSyncCurrentTask();
+    }
+    status.textContent = `已上傳 ${uploaded.length} 張；第一張會成為愛+1主圖。`;
+  } catch (e) {
+    status.textContent = `上傳未完成：${e.message}。請確認 product-images 圖片空間已開放上傳及公開讀取。`;
+  } finally {
+    get('productImages').value = '';
+  }
+}
 
 function cloud(text, ok = true) {
   get('cloudStatus').textContent = text;
@@ -774,6 +881,9 @@ async function parseVendor() {
     }
     set('sizeText', cleanSize);
     set('capacity', cleanText(data.capacity || data.specs || '', 'space'));
+    set('imageUrls', '');
+    get('productImages').value = '';
+    get('imageUploadStatus').textContent = '請替這項商品加入圖片；第一張是主圖。';
     if (val('mode') === 'korea') {
       set('krwPrice', data.cost || '');
       if (parsedCategory === 'skincare') set('skincareCost', '');
@@ -865,6 +975,7 @@ async function addTask(silent = false) {
     cost: p.cost, estimatedCost: p.estimatedCost, safeAllocation: p.safeAllocation, inboundShipping: p.inboundShipping, category: p.cat,
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
     capacity: val('capacity'),
+    imageUrls: productImageUrls(),
     priceNote: val('priceNote'),
     marketAdvice: get('marketAdvice').innerText,
     time: new Date().toLocaleString(),
@@ -929,6 +1040,13 @@ function copyTaskPost(i) {
 function editTask(i) {
   const t = tasks[i];
   currentEditingId = t.id;
+  set('vendorCode', (t.title || '').includes('｜') ? (t.title || '').split('｜')[0] : '');
+  set('category', t.category || 'auto');
+  set('colors', t.colors || '');
+  set('specs', t.specs || 'F');
+  set('sizeText', t.sizeText || '');
+  set('capacity', t.capacity || '');
+  set('imageUrls', (t.imageUrls || []).join('\n'));
   set('productName', (t.title || '').replace(/^.*?｜/, ''));
   if ((t.category || detectCategory()) === 'skincare') set('skincareCost', t.cost || '');
   else set('clothingCost', t.cost || '');
@@ -962,6 +1080,7 @@ async function autoSyncCurrentTask() {
     cost: p.cost, estimatedCost: p.estimatedCost, safeAllocation: p.safeAllocation, inboundShipping: p.inboundShipping, category: p.cat,
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
     capacity: val('capacity'),
+    imageUrls: productImageUrls(),
     priceNote: val('priceNote'),
     marketAdvice: get('marketAdvice').innerText,
     time: old.time || new Date().toLocaleString(),
@@ -1036,7 +1155,7 @@ function parseSpecs(str) {
   return arr.length ? arr : ['F'];
 }
 
-function buildAiPlusRows(deadline) {
+function buildAiPlusRows(deadline, sourceTasks = tasks) {
   // 對齊範本：前 6 列說明 + 第 7 列才是真正表頭
   const rows = [
     ['版本號：', 20260504],
@@ -1048,7 +1167,7 @@ function buildAiPlusRows(deadline) {
     ['開團類型', '商品名稱', '結團日期', '內文', '主圖片連結', '主款式', '副款式1', '副款式2', '售價', '成本', '供應商', '商品編號', '款式編號', '款式圖片', '庫存 ( 現貨必填 )', '倉位', '其他圖片連結1', '其他圖片連結2', '其他圖片連結3', '其他圖片連結4', '其他圖片連結5', '影片連結', '特價', 'VIP', 'VVIP', 'SVIP', 'SVVIP', '條碼', '折扣種類', '折扣件數\n(件)', '折扣價格\n(元)', '折扣比例\n(％)', '備註']
   ];
 
-  const pending = tasks.filter(t => !t.done);
+  const pending = sourceTasks.filter(t => !t.done);
 
   pending.forEach(t => {
     const isSkincare = t.category === 'skincare';
@@ -1068,7 +1187,9 @@ function buildAiPlusRows(deadline) {
           row[1] = t.title || '';        // 商品名稱
           row[2] = deadline;             // 結團日期
           row[3] = content;              // 內文
-          // row[4] 主圖片連結 留空
+          const images = Array.isArray(t.imageUrls) ? t.imageUrls : [];
+          row[4] = images[0] || '';      // 主圖片連結
+          for (let n = 1; n < 6; n++) row[15 + n] = images[n] || ''; // Q:U 其他圖片
         }
         row[5] = color;                  // 主款式
         row[6] = spec;                   // 副款式1
@@ -1101,34 +1222,104 @@ function defaultDeadline(daysAhead = 30) {
   return `${yyyy}/${mm}/${dd}`;
 }
 
+// 愛+1匯出使用瀏覽器原生 XLSX 寫檔，避免手機或本機檔案開啟時 CDN 模組未載入而按鈕失效。
+function xmlEscape(v) {
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+function excelColumn(index) {
+  let out = '';
+  for (let n = index + 1; n; n = Math.floor((n - 1) / 26)) out = String.fromCharCode(65 + (n - 1) % 26) + out;
+  return out;
+}
+function crc32(bytes) {
+  let crc = -1;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (crc & 1 ? 0xEDB88320 : 0);
+  }
+  return (crc ^ -1) >>> 0;
+}
+function xlsxZip(entries) {
+  const encoder = new TextEncoder();
+  const pieces = [], directory = [];
+  let offset = 0;
+  for (const [name, content] of entries) {
+    const nameBytes = encoder.encode(name), bytes = encoder.encode(content), crc = crc32(bytes);
+    const local = new Uint8Array(30 + nameBytes.length), view = new DataView(local.buffer);
+    view.setUint32(0, 0x04034B50, true); view.setUint16(4, 20, true);
+    view.setUint16(6, 0x0800, true); view.setUint32(14, crc, true);
+    view.setUint32(18, bytes.length, true); view.setUint32(22, bytes.length, true);
+    view.setUint16(26, nameBytes.length, true); local.set(nameBytes, 30);
+    pieces.push(local, bytes);
+    const central = new Uint8Array(46 + nameBytes.length), c = new DataView(central.buffer);
+    c.setUint32(0, 0x02014B50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true);
+    c.setUint16(8, 0x0800, true); c.setUint32(16, crc, true);
+    c.setUint32(20, bytes.length, true); c.setUint32(24, bytes.length, true);
+    c.setUint16(28, nameBytes.length, true); c.setUint32(42, offset, true);
+    central.set(nameBytes, 46); directory.push(central);
+    offset += local.length + bytes.length;
+  }
+  const directorySize = directory.reduce((n, item) => n + item.length, 0);
+  const end = new Uint8Array(22), e = new DataView(end.buffer);
+  e.setUint32(0, 0x06054B50, true); e.setUint16(8, entries.length, true);
+  e.setUint16(10, entries.length, true); e.setUint32(12, directorySize, true);
+  e.setUint32(16, offset, true);
+  return new Blob([...pieces, ...directory, end], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+function aiPlusWorkbook(rows) {
+  const sheetRows = rows.map((row, ri) => {
+    const cells = row.map((value, ci) => {
+      if (value === '' || value === null || value === undefined) return '';
+      const ref = excelColumn(ci) + (ri + 1);
+      if (typeof value === 'number' && Number.isFinite(value)) return `<c r="${ref}"><v>${value}</v></c>`;
+      return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(value)}</t></is></c>`;
+    }).join('');
+    return `<row r="${ri + 1}">${cells}</row>`;
+  }).join('');
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${sheetRows}</sheetData></worksheet>`;
+  return xlsxZip([
+    ['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'],
+    ['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="開團資訊" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+    ['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'],
+    ['xl/worksheets/sheet1.xml', sheet]
+  ]);
+}
 function exportAiPlusExcel() {
-  if (typeof XLSX === 'undefined') {
-    alert('Excel匯出模組尚未載入，請重新整理後再試');
-    return;
-  }
+  const status = get('exportStatus');
   const pending = tasks.filter(t => !t.done);
-  if (pending.length === 0) {
-    alert('目前沒有未完成商品可匯出');
+  let source = pending;
+  if (!source.length && val('productName')) {
+    const p = calcPrices();
+    source = [{ title: val('productName'), category: p.cat, capacity: val('capacity'),
+      colors: val('colors'), specs: val('specs'), fullPost: get('fullPost').innerText,
+      retail: p.retail, vip: p.vip, vvip: p.vvip, cost: p.cost, imageUrls: productImageUrls(), done: false }];
+  }
+  if (!source.length) {
+    status.textContent = '沒有可匯出的商品；請先完成商品資料，或從四款草稿選一款。';
+    alert(status.textContent);
     return;
   }
-
-  // 跳出對話框讓用戶輸入結團日期
   const suggested = defaultDeadline(30);
-  let deadline = prompt(`請輸入結團日期（格式 yyyy/MM/dd）\n\n建議：${suggested}\n（直接按 Enter 採用建議值）`, suggested);
-  if (deadline === null) return; // 用戶按取消
+  let deadline = prompt(`請輸入結團日期（yyyy/MM/dd）\n這次要匯出 ${source.length} 款商品`, suggested);
+  if (deadline === null) { status.textContent = '已取消匯出。'; return; }
   deadline = deadline.trim() || suggested;
-
-  // 格式檢查
   if (!/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(deadline)) {
-    alert('結團日期格式錯誤，請用 yyyy/MM/dd 例如 2026/06/27');
-    return;
+    status.textContent = '結團日期格式錯誤，請輸入 yyyy/MM/dd。'; alert(status.textContent); return;
   }
-
-  const rows = buildAiPlusRows(deadline);
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '開團資訊');
-  XLSX.writeFile(wb, 'Bubu愛加一匯入_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  try {
+    const blob = aiPlusWorkbook(buildAiPlusRows(deadline, source));
+    const url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url;
+    link.download = 'Bubu愛加一匯入_' + new Date().toLocaleDateString('sv-SE') + '.xlsx';
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    status.textContent = `已產生 ${source.length} 款商品的 Excel；請到下載資料夾查看。`;
+  } catch (error) {
+    status.textContent = '匯出失敗：' + error.message;
+    alert(status.textContent);
+  }
 }
 
 function copyPost() {
@@ -1416,8 +1607,14 @@ async function seedDefaultSuppliers(){const defaults=[['CP','米亞','服飾','�
 
 
 // V8.3 營運支出＋每月國泰對帳（儲存在本機瀏覽器）
-let expenseRecords=JSON.parse(localStorage.getItem('bubu_expenses_v8')||'[]');
-let cathayRecords=JSON.parse(localStorage.getItem('bubu_cathay_reconcile_v83')||'[]');
+let expenseRecords=[];
+let cathayRecords=[];
+try {
+  expenseRecords=JSON.parse(localStorage.getItem('bubu_expenses_v8')||'[]');
+  cathayRecords=JSON.parse(localStorage.getItem('bubu_cathay_reconcile_v83')||'[]');
+} catch (error) {
+  // 某些 file:// 環境限制本機儲存；不應因此讓商品匯出按鈕停止工作。
+}
 function currentMonth(){return todayISO().slice(0,7)}
 function addExpenseRecord(){const date=val('expenseDate')||todayISO(),kind=val('expenseKind'),item=val('expenseItem'),amount=Number(val('expenseAmount'))||0,payment=val('expensePayment'),note=val('expenseNote');if(!item){alert('請輸入支出項目');return}if(amount<=0){alert('請輸入正確金額');return}expenseRecords.unshift({id:Date.now(),date,kind,item,amount,payment,note});localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));['expenseItem','expenseAmount','expenseNote'].forEach(id=>set(id,''));renderExpenses();cloud('✅ 支出已儲存',true)}
 function deleteExpenseRecord(id){if(!confirm('確定刪除此筆支出？'))return;expenseRecords=expenseRecords.filter(x=>x.id!==id);localStorage.setItem('bubu_expenses_v8',JSON.stringify(expenseRecords));renderExpenses()}
@@ -1431,16 +1628,22 @@ function exportCathayMonthExcel(){const month=val('cathayMonth')||currentMonth()
 function initV8(){const t=todayISO();if(get('purchaseDate'))get('purchaseDate').value=t;if(get('expenseDate'))get('expenseDate').value=t;if(get('cathayDate'))get('cathayDate').value=t;if(get('cathayMonth'))get('cathayMonth').value=currentMonth();renderExpenses();renderCathayReconcile()}
 
 // 啟動
-supabaseClient
-  .channel('tasks-changes')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadTasks())
-  .subscribe();
+if (supabaseClient) {
+  supabaseClient
+    .channel('tasks-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadTasks())
+    .subscribe();
+} else {
+  get('cloudStatus').textContent = '雲端模組未載入；仍可匯出目前商品';
+}
 
 initV8();
 loadTasks();
 loadSuppliers();
 loadPurchaseRecords();
 updateAll();
+renderRecoveredDrafts();
+switchPage(location.hash === '#purchase' ? 'purchase' : 'listing');
 </script>
 </body>
 </html>
