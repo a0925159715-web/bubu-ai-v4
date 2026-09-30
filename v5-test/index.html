@@ -448,6 +448,7 @@
   <div class="toolbar">
     <label>結團日期 <input id="aiPlusDeadline" type="date" value="2026-10-04" onchange="localStorage.setItem('bubuAiPlusDeadline', this.value)"/></label>
     <button class="btn small purple" onclick="exportAiPlusExcel()">📤 匯出愛+1 Excel</button>
+    <button id="confirmExportSyncBtn" class="btn small teal" onclick="confirmExportSynced()" disabled>✅ 愛+1匯入成功，整批標記已同步</button>
     <span id="exportStatus" class="subtle" role="status">按下後會下載 Excel；目前編輯中的商品也可直接匯出。</span>
   </div>
   <div style="overflow-x:auto">
@@ -1303,6 +1304,41 @@ function aiPlusWorkbook(rows) {
       : content
   ]));
 }
+let lastExportTaskIds = [];
+function setExportSyncTarget(ids) {
+  lastExportTaskIds = ids.map(String);
+  sessionStorage.setItem('bubuLastExportTaskIds', JSON.stringify(lastExportTaskIds));
+  get('confirmExportSyncBtn').disabled = lastExportTaskIds.length === 0;
+}
+async function confirmExportSynced() {
+  const status = get('exportStatus');
+  const button = get('confirmExportSyncBtn');
+  const targets = tasks.filter(t => !t.done && lastExportTaskIds.includes(String(t.id)));
+  if (!targets.length) {
+    setExportSyncTarget([]);
+    status.textContent = '這次匯出的商品已經標記完成，或工作台資料已變更。';
+    return;
+  }
+  button.disabled = true;
+  const syncedAt = new Date().toISOString();
+  const results = await Promise.all(targets.map(async t => {
+    const updated = { ...t, done: true, syncedAt };
+    delete updated.id;
+    delete updated.created_at;
+    try {
+      const { error } = await supabaseClient.from('tasks').update({ content: JSON.stringify(updated) }).eq('id', t.id);
+      return { id: String(t.id), error };
+    } catch (error) {
+      return { id: String(t.id), error };
+    }
+  }));
+  const failed = results.filter(r => r.error);
+  setExportSyncTarget(failed.map(r => r.id));
+  await loadTasks();
+  status.textContent = failed.length
+    ? `已標記 ${results.length - failed.length} 款；${failed.length} 款同步失敗，請再按一次。${failed[0].error.message}`
+    : `已將本次匯出的 ${results.length} 款商品標記為已同步。`;
+}
 function exportAiPlusExcel() {
   const status = get('exportStatus');
   const pending = tasks.filter(t => !t.done);
@@ -1331,11 +1367,20 @@ function exportAiPlusExcel() {
     link.download = 'Bubu愛加一匯入_' + new Date().toLocaleDateString('sv-SE') + '.xlsx';
     document.body.appendChild(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    status.textContent = `已產生 ${source.length} 款商品的 Excel；請到下載資料夾查看。`;
+    setExportSyncTarget(source.filter(t => t.id != null).map(t => t.id));
+    status.textContent = lastExportTaskIds.length
+      ? `已產生 ${source.length} 款商品的 Excel；愛+1匯入成功後，按「整批標記已同步」。`
+      : `Excel 已下載；這款商品尚未儲存到工作台，因此沒有可標記同步的紀錄。`;
   } catch (error) {
     status.textContent = '匯出失敗：' + error.message;
     alert(status.textContent);
   }
+}
+
+try {
+  setExportSyncTarget(JSON.parse(sessionStorage.getItem('bubuLastExportTaskIds') || '[]'));
+} catch (error) {
+  setExportSyncTarget([]);
 }
 
 function copyPost() {
