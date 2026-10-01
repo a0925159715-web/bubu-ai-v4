@@ -381,8 +381,10 @@
     </div>
 
     <div id="skincareFields" class="hidden">
-      <label>容量 / 規格</label>
+      <label>容量（例如：150ml、30g）</label>
       <input id="capacity" oninput="updateAll()"/>
+      <label>主款式（每行一個，例如：養護精華、免沖洗護髮素）</label>
+      <textarea id="skincareStyles" placeholder="單一品項可留空；多款請每行填一款" oninput="updateAll()"></textarea>
     </div>
 
     <div class="checkPanel" style="margin-top:12px">
@@ -658,6 +660,20 @@ function switchPage(page) {
 function otherProductImageUrls() {
   return val('otherImageUrls').split(/[\r\n]+/).map(s => s.trim()).filter(Boolean).slice(0, 5);
 }
+function parseSkincareStyles(value) {
+  return String(value || '').split(/[\r\n,，、;；|｜]+/).map(v => v.trim()).filter(Boolean);
+}
+function fillSkincareOptions(data) {
+  const capacity = cleanText(data.capacity || '', 'space');
+  const explicit = data.mainStyles || data.variants;
+  const styles = Array.isArray(explicit) ? explicit.map(v => typeof v === 'string' ? v : v.name || '').filter(Boolean) : parseSkincareStyles(explicit || '');
+  const parts = parseSkincareStyles(capacity);
+  const looksLikeCapacity = v => /\d\s*(?:ml|mL|g|克|毫升|片|錠|入|顆|包|瓶|盒)/i.test(v);
+  const mixedStyles = !styles.length && parts.length > 1 && parts.every(v => !looksLikeCapacity(v));
+  set('skincareStyles', (mixedStyles ? parts : styles).join('\n'));
+  const titleCapacity = String(data.productName || '').match(/\d+(?:\.\d+)?\s*(?:ml|g|毫升|克)/i);
+  set('capacity', mixedStyles ? (titleCapacity ? titleCapacity[0] : '') : capacity);
+}
 function productImageUrls() {
   return [val('mainImageUrl'), ...otherProductImageUrls()];
 }
@@ -829,7 +845,8 @@ function updateAll() {
   let full = '';
   if (p.cat === 'skincare') {
     const cap = val('capacity') || '依實際包裝標示';
-    full = `${title}\n\n價格：${p.retail}\n規格：${cap}\n\n——————————\n\n${copy}`;
+    const styles = parseSkincareStyles(val('skincareStyles'));
+    full = `${title}\n\n價格：${p.retail}\n容量：${cap}\n${styles.length ? '款式：' + styles.join('、') + '\n' : ''}\n——————————\n\n${copy}`;
   } else {
     const colors = val('colors') || '單一色';
     const specs = val('specs') || 'F';
@@ -885,7 +902,8 @@ async function parseVendor() {
       cleanSize = cleanSize.split(/\s*[;；]\s*/).filter(Boolean).join('\n');
     }
     set('sizeText', cleanSize);
-    set('capacity', cleanText(data.capacity || data.specs || '', 'space'));
+    if (parsedCategory === 'skincare') fillSkincareOptions(data);
+    else { set('capacity', cleanText(data.capacity || '', 'space')); set('skincareStyles', ''); }
     set('mainImageUrl', '');
     set('otherImageUrls', '');
     get('productImages').value = '';
@@ -980,7 +998,7 @@ async function addTask(silent = false) {
     retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
     cost: p.cost, estimatedCost: p.estimatedCost, safeAllocation: p.safeAllocation, inboundShipping: p.inboundShipping, category: p.cat,
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
-    capacity: val('capacity'),
+    capacity: val('capacity'), mainStyles: parseSkincareStyles(val('skincareStyles')),
     supplierName: val('listingSupplier'), memberViewingLevel: val('memberViewingLevel') || '一般',
     imageUrls: productImageUrls(), mainImageUrl: val('mainImageUrl'), otherImageUrls: otherProductImageUrls(),
     priceNote: val('priceNote'),
@@ -1053,7 +1071,8 @@ function editTask(i) {
   set('colors', t.colors || '');
   set('specs', t.specs || 'F');
   set('sizeText', t.sizeText || '');
-  set('capacity', t.capacity || '');
+  if (t.category === 'skincare' && !Array.isArray(t.mainStyles)) fillSkincareOptions({ capacity: t.capacity || '', productName: t.title || '' });
+  else { set('capacity', t.capacity || ''); set('skincareStyles', (t.mainStyles || []).join('\n')); }
   selectListingSupplier(t.supplierName || '');
   set('memberViewingLevel', t.memberViewingLevel || '一般');
   set('mainImageUrl', t.mainImageUrl ?? (t.imageUrls || [])[0] ?? '');
@@ -1091,7 +1110,7 @@ async function autoSyncCurrentTask() {
     retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
     cost: p.cost, estimatedCost: p.estimatedCost, safeAllocation: p.safeAllocation, inboundShipping: p.inboundShipping, category: p.cat,
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
-    capacity: val('capacity'),
+    capacity: val('capacity'), mainStyles: parseSkincareStyles(val('skincareStyles')),
     supplierName: val('listingSupplier'), memberViewingLevel: val('memberViewingLevel') || '一般',
     imageUrls: productImageUrls(), mainImageUrl: val('mainImageUrl'), otherImageUrls: otherProductImageUrls(),
     priceNote: val('priceNote'),
@@ -1184,7 +1203,8 @@ function buildAiPlusRows(deadline, sourceTasks = tasks) {
 
   pending.forEach(t => {
     const isSkincare = t.category === 'skincare';
-    const colorList = isSkincare ? [t.capacity || '單一規格'] : parseColors(t.colors);
+    const skincareStyles = Array.isArray(t.mainStyles) ? t.mainStyles : parseSkincareStyles(t.mainStyles);
+    const colorList = isSkincare ? (skincareStyles.length ? skincareStyles : ['單一規格']) : parseColors(t.colors);
     const specList = isSkincare ? [''] : parseSpecs(t.specs);
 
     // 完整文案（內文欄）
@@ -1345,7 +1365,7 @@ function exportAiPlusExcel() {
   let source = pending;
   if (!source.length && val('productName')) {
     const p = calcPrices();
-    source = [{ title: val('productName'), category: p.cat, capacity: val('capacity'),
+    source = [{ title: val('productName'), category: p.cat, capacity: val('capacity'), mainStyles: parseSkincareStyles(val('skincareStyles')),
       colors: val('colors'), specs: val('specs'), fullPost: get('fullPost').innerText,
       retail: p.retail, vip: p.vip, vvip: p.vvip, cost: p.cost, imageUrls: productImageUrls(), mainImageUrl: val('mainImageUrl'), otherImageUrls: otherProductImageUrls(),
       supplierName: val('listingSupplier'), memberViewingLevel: val('memberViewingLevel') || '一般', done: false }];
