@@ -387,13 +387,13 @@
 
     <div class="checkPanel" style="margin-top:12px">
       <div class="checkPanelTitle">愛+1 商品圖片</div>
-      <label>從手機或電腦選照片（最多六張，第一張為主圖）</label>
-      <input id="productImages" type="file" accept="image/*" multiple onchange="uploadProductImages(this.files)"/>
-      <div id="imageUploadStatus" class="subtle">請先選照片；上傳成功後會自動填入愛+1圖片欄。</div>
-      <details style="margin-top:8px"><summary>已有圖片網址時使用</summary>
-        <label>圖片網址（一行一張）</label>
-        <textarea id="imageUrls" placeholder="https://..." oninput="scheduleAutoSync()"></textarea>
-      </details>
+      <label>主圖片（1張）</label>
+      <input id="mainProductImage" type="file" accept="image/*" onchange="uploadProductImages(this.files, 'main')"/>
+      <input id="mainImageUrl" placeholder="主圖片網址（上傳後自動填入）" oninput="scheduleAutoSync()"/>
+      <label>其他圖片（最多5張）</label>
+      <input id="otherProductImages" type="file" accept="image/*" multiple onchange="uploadProductImages(this.files, 'other')"/>
+      <textarea id="otherImageUrls" placeholder="其他圖片網址，一行一張（上傳後自動填入）" oninput="scheduleAutoSync()"></textarea>
+      <div id="imageUploadStatus" class="subtle">主圖片與其他圖片請分別選擇；上傳後會填入各自的網址欄。</div>
     </div>
 
     <div id="importInfoBox" class="checkPanel hidden">
@@ -655,20 +655,26 @@ function switchPage(page) {
   }
 }
 
-function productImageUrls() {
-  return val('imageUrls').split(/[\r\n]+/).map(s => s.trim()).filter(Boolean).slice(0, 6);
+function otherProductImageUrls() {
+  return val('otherImageUrls').split(/[\r\n]+/).map(s => s.trim()).filter(Boolean).slice(0, 5);
 }
-
-async function uploadProductImages(files) {
+function productImageUrls() {
+  return [val('mainImageUrl'), ...otherProductImageUrls()];
+}
+let imageUploadBusy = false;
+async function uploadProductImages(files, target) {
   const chosen = Array.from(files || []);
-  if (!chosen.length) return;
+  if (!chosen.length || imageUploadBusy) return;
   const status = get('imageUploadStatus');
-  const existing = productImageUrls();
-  if (existing.length + chosen.length > 6) {
-    status.textContent = '愛+1 最多接收一張主圖及五張其他圖片，請減少張數。';
+  const existing = otherProductImageUrls();
+  if ((target === 'main' && chosen.length !== 1) || (target === 'other' && existing.length + chosen.length > 5)) {
+    status.textContent = '主圖片限1張；其他圖片最多5張。';
     return;
   }
-  status.textContent = `正在上傳 ${chosen.length} 張照片…`;
+  const editingId = currentEditingId, productName = val('productName');
+  imageUploadBusy = true;
+  get('mainProductImage').disabled = get('otherProductImages').disabled = true;
+  status.textContent = `正在上傳${target === 'main' ? '主圖片' : '其他圖片'} ${chosen.length} 張…`;
   const uploaded = [];
   try {
     for (const file of chosen) {
@@ -677,16 +683,20 @@ async function uploadProductImages(files) {
       const path = `products/${Date.now()}-${crypto.randomUUID()}.${suffix}`;
       const { error } = await supabaseClient.storage.from('product-images').upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
+      if (currentEditingId !== editingId || val('productName') !== productName) throw new Error('商品已切換，請回到原商品重新選擇照片');
       const { data } = supabaseClient.storage.from('product-images').getPublicUrl(path);
       uploaded.push(data.publicUrl);
-      set('imageUrls', [...existing, ...uploaded].join('\n'));
+      if (target === 'main') set('mainImageUrl', data.publicUrl);
+      else set('otherImageUrls', [...existing, ...uploaded].join('\n'));
       if (currentEditingId) await autoSyncCurrentTask();
     }
-    status.textContent = `已上傳 ${uploaded.length} 張；第一張會成為愛+1主圖。`;
+    status.textContent = `${target === 'main' ? '主圖片' : '其他圖片'}已上傳 ${uploaded.length} 張。`;
   } catch (e) {
-    status.textContent = `上傳未完成：${e.message}。請確認 product-images 圖片空間已開放上傳及公開讀取。`;
+    status.textContent = `上傳未完成：${e.message}`;
   } finally {
-    get('productImages').value = '';
+    imageUploadBusy = false;
+    get('mainProductImage').disabled = get('otherProductImages').disabled = false;
+    get(target === 'main' ? 'mainProductImage' : 'otherProductImages').value = '';
   }
 }
 
@@ -876,9 +886,10 @@ async function parseVendor() {
     }
     set('sizeText', cleanSize);
     set('capacity', cleanText(data.capacity || data.specs || '', 'space'));
-    set('imageUrls', '');
+    set('mainImageUrl', '');
+    set('otherImageUrls', '');
     get('productImages').value = '';
-    get('imageUploadStatus').textContent = '請替這項商品加入圖片；第一張是主圖。';
+    get('imageUploadStatus').textContent = '請分別加入這項商品的主圖片與其他圖片。';
     if (val('mode') === 'korea') {
       set('krwPrice', data.cost || '');
       if (parsedCategory === 'skincare') set('skincareCost', '');
@@ -971,7 +982,7 @@ async function addTask(silent = false) {
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
     capacity: val('capacity'),
     supplierName: val('listingSupplier'), memberViewingLevel: val('memberViewingLevel') || '一般',
-    imageUrls: productImageUrls(),
+    imageUrls: productImageUrls(), mainImageUrl: val('mainImageUrl'), otherImageUrls: otherProductImageUrls(),
     priceNote: val('priceNote'),
     marketAdvice: get('marketAdvice').innerText,
     time: new Date().toLocaleString(),
@@ -1045,7 +1056,8 @@ function editTask(i) {
   set('capacity', t.capacity || '');
   selectListingSupplier(t.supplierName || '');
   set('memberViewingLevel', t.memberViewingLevel || '一般');
-  set('imageUrls', (t.imageUrls || []).join('\n'));
+  set('mainImageUrl', t.mainImageUrl ?? (t.imageUrls || [])[0] ?? '');
+  set('otherImageUrls', (t.otherImageUrls ?? (t.imageUrls || []).slice(1)).join('\n'));
   set('productName', (t.title || '').replace(/^.*?｜/, ''));
   if ((t.category || detectCategory()) === 'skincare') set('skincareCost', t.cost || '');
   else set('clothingCost', t.cost || '');
@@ -1081,7 +1093,7 @@ async function autoSyncCurrentTask() {
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
     capacity: val('capacity'),
     supplierName: val('listingSupplier'), memberViewingLevel: val('memberViewingLevel') || '一般',
-    imageUrls: productImageUrls(),
+    imageUrls: productImageUrls(), mainImageUrl: val('mainImageUrl'), otherImageUrls: otherProductImageUrls(),
     priceNote: val('priceNote'),
     marketAdvice: get('marketAdvice').innerText,
     time: old.time || new Date().toLocaleString(),
@@ -1191,8 +1203,9 @@ function buildAiPlusRows(deadline, sourceTasks = tasks) {
           row[10] = t.supplierName || ''; // 供應商
           row[33] = t.memberViewingLevel || '一般'; // 會員觀看等級
           const images = Array.isArray(t.imageUrls) ? t.imageUrls : [];
-          row[4] = images[0] || '';      // 主圖片連結
-          for (let n = 1; n < 6; n++) row[15 + n] = images[n] || ''; // Q:U 其他圖片
+          row[4] = t.mainImageUrl ?? images[0] ?? '';      // 主圖片連結
+          const otherImages = t.otherImageUrls ?? images.slice(1);
+          for (let n = 0; n < 5; n++) row[16 + n] = otherImages[n] || ''; // Q:U 其他圖片
         }
         row[5] = color;                  // 主款式
         row[6] = spec;                   // 副款式1
@@ -1327,13 +1340,14 @@ async function confirmExportSynced() {
 }
 function exportAiPlusExcel() {
   const status = get('exportStatus');
+  if (imageUploadBusy) { status.textContent = '圖片仍在上傳，請等完成後再匯出。'; return; }
   const pending = tasks.filter(t => !t.done);
   let source = pending;
   if (!source.length && val('productName')) {
     const p = calcPrices();
     source = [{ title: val('productName'), category: p.cat, capacity: val('capacity'),
       colors: val('colors'), specs: val('specs'), fullPost: get('fullPost').innerText,
-      retail: p.retail, vip: p.vip, vvip: p.vvip, cost: p.cost, imageUrls: productImageUrls(),
+      retail: p.retail, vip: p.vip, vvip: p.vvip, cost: p.cost, imageUrls: productImageUrls(), mainImageUrl: val('mainImageUrl'), otherImageUrls: otherProductImageUrls(),
       supplierName: val('listingSupplier'), memberViewingLevel: val('memberViewingLevel') || '一般', done: false }];
   }
   if (!source.length) {
