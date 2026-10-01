@@ -430,6 +430,7 @@
 
 <div class="card" style="margin-top:16px">
   <h2>③ 完整貼文預覽</h2>
+  <label><input id="includeShoppingNotice" type="checkbox" checked onchange="updateAll()"> 貼文底部附上購物須知</label>
   <div id="fullPost" class="preview">請先貼廠商原文，按「AI 自動整理商品」。</div>
   <button class="btn gray" onclick="copyPost()">📋 一鍵複製完整貼文</button>
   <button class="btn teal" onclick="addTask()">💾 儲存到上架工作台</button>
@@ -618,6 +619,31 @@ const val = id => get(id).value.trim();
 const set = (id, v) => { get(id).value = v || ''; };
 const ceil10 = n => Math.ceil((Number(n) || 0) / 10) * 10;
 const money = n => 'NT$' + Math.round(Number(n) || 0).toLocaleString();
+const SHOPPING_NOTICE = `———————————————
+📅 收單 & 結帳時間
+• 收單時間：每週日（如有再開團，依公告為主）。
+• 結帳日期：每月 5 號 & 20 號（需提前結帳請主動告知）。
+
+🤝 合作 & 新客流程
+• 新客/批發合作：第一次購買請務必私訊官方 LINE 提供基本資料。
+📲 官方 LINE 👉 https://line.me/ti/p/@bubukorea
+
+⚠️ 重要：關於棄單與信用備案
+由於訂單涉及國稅局稅務申報，凡逾期未取貨或惡意棄單者：
+1.系統自動產生永久違約紀錄。
+2.我方保留法律追溯權並進行備案通報，且同步通報電商黑名單系統。
+3.永久封鎖並取消所有下單與抽獎資格。
+
+📌 【 下單前請留意 】
+• 追加期：代購預購約 7～60 個工作日（不含假日），下單即同意等待，不接受催單或因等太久取消。
+• 品質標準：服飾因批次生產可能產生 ±3～5cm 誤差；對產地有絕對要求者建議不要下單。
+• 退換貨規範：色差、尺寸不合、主觀感受（與想像不同）不列入退貨範圍。
+• 重大瑕疵：請於收到後 48 小時內 附上**「開箱影片」**與照片私訊辦理，逾時恕不受理。
+
+📖 詳細購物規範、付款與查單方式請見連結：
+👉 https://www.facebook.com/share/p/12KhRwTzQkm/?
+
+📝 下單即視為同意以上所有規則，感謝您的體諒與支持 💛`;
 function switchPage(page) {
   const showPurchase = page === 'purchase';
   get('listingPage').classList.toggle('hidden', showPurchase);
@@ -800,7 +826,7 @@ function updateAll() {
     const size = cleanText(val('sizeText'));
     full = `${title}\n\n顏色：${colors}\n規格：${specs}\n價格：${p.retail}\n\n${size ? '📏 尺寸（平量cm）\n' + size + '\n' : ''}——————————\n\n${copy}`;
   }
-  get('fullPost').textContent = cleanText(full);
+  get('fullPost').textContent = cleanText(full) + (get('includeShoppingNotice').checked ? '\n\n' + SHOPPING_NOTICE : '');
   if (currentEditingId) scheduleAutoSync();
 }
 
@@ -939,7 +965,7 @@ async function addTask(silent = false) {
   }
 
   const item = {
-    done: false, title,
+    done: false, title, includeShoppingNotice: get('includeShoppingNotice').checked,
     retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
     cost: p.cost, estimatedCost: p.estimatedCost, safeAllocation: p.safeAllocation, inboundShipping: p.inboundShipping, category: p.cat,
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
@@ -1010,6 +1036,7 @@ function copyTaskPost(i) {
 function editTask(i) {
   const t = tasks[i];
   currentEditingId = t.id;
+  get('includeShoppingNotice').checked = t.includeShoppingNotice === true;
   set('vendorCode', (t.title || '').includes('｜') ? (t.title || '').split('｜')[0] : '');
   set('category', t.category || 'auto');
   set('colors', t.colors || '');
@@ -1048,6 +1075,7 @@ async function autoSyncCurrentTask() {
   const title = vendor && name && !name.startsWith(vendor + '｜') ? vendor + '｜' + name : name;
   const updated = {
     ...old, done: old.done || false, syncedAt: old.syncedAt || null, title,
+    includeShoppingNotice: get('includeShoppingNotice').checked,
     retail: p.retail, vip: p.vip, vvip: p.vvip, wholesale: p.vvip,
     cost: p.cost, estimatedCost: p.estimatedCost, safeAllocation: p.safeAllocation, inboundShipping: p.inboundShipping, category: p.cat,
     colors: val('colors'), specs: val('specs'), sizeText: val('sizeText'),
