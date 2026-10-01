@@ -258,6 +258,7 @@ module.exports = async function handler(req, res) {
   "specs":"",
   "sizeText":"",
   "capacity":"",
+  "mainStyles":[],
   "cost":0,
   "category":"clothing",
   "copy":"",
@@ -281,6 +282,11 @@ module.exports = async function handler(req, res) {
 
 【specs 規則】
 specs 只能放尺寸代號，不可放商品特色。若沒有尺寸，服飾填 "F"；保養品/生活用品可留空。
+
+【保養品容量與主款式規則】
+capacity 只放容量、重量或包裝數量，例如 "150ml"、"22ml×10片"；不得把品項名稱塞進 capacity。
+mainStyles 是可供客人單獨選購的品項名稱陣列。原文明确列出多款精華、護髮素、面膜種類、香味等選項時，逐款拆開，保留原名稱。例如養護精華與免沖洗護髮素應輸出 ["養護精華","免沖洗護髮素"]。
+同一款商品的成分、功效、使用部位、贈品或固定套組內容不是可選款式，不可拆成主款式。單一品項或文案無法確認有獨立選項時，mainStyles 輸出 []。服飾仍使用 colors 與 specs，mainStyles 輸出 []。
 
 【sizeText 規則】
 多尺碼必須每個尺碼一行，用 \\n 換行。若原文有尺寸表，完整保留。
@@ -364,6 +370,9 @@ ${externalInfo || "未取得外部搜尋資料"}`;
       specs: parsed.specs || "",
       sizeText: finalSizeText,
       capacity: finalCapacity || "",
+      mainStyles: isSkin && Array.isArray(parsed.mainStyles)
+        ? [...new Set(parsed.mainStyles.filter(v => typeof v === "string").map(v => v.trim()).filter(Boolean))]
+        : [],
       cost: finalCost,
       category: finalCategory,
       copy: parsed.copy || "",
