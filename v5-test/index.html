@@ -433,6 +433,7 @@
 <div class="card" style="margin-top:16px">
   <h2>③ 完整貼文預覽</h2>
   <label><input id="includeShoppingNotice" type="checkbox" checked onchange="updateAll()"> 貼文底部附上購物須知</label>
+  <div id="parseStatus" role="status" style="margin:8px 0;color:#a33"></div>
   <div id="fullPost" class="preview">請先貼廠商原文，按「AI 自動整理商品」。</div>
   <button class="btn gray" onclick="copyPost()">📋 一鍵複製完整貼文</button>
   <button class="btn teal" onclick="addTask()">💾 儲存到上架工作台</button>
@@ -862,7 +863,9 @@ async function parseVendor() {
   if (!rawText) { alert('請先貼上廠商原文'); return; }
   // V6.5.4 修 bug：整理新商品前，先清掉「正在編輯」的舊 id，
   // 避免後續市場價格偵測寫進上一筆，造成上一筆被新商品覆蓋。
+  clearTimeout(autoSaveTimer);
   currentEditingId = null;
+  get('parseStatus').textContent = '';
   const btn = get('parseBtn');
   btn.disabled = true;
   btn.textContent = 'AI整理中...';
@@ -906,7 +909,8 @@ async function parseVendor() {
     else { set('capacity', cleanText(data.capacity || '', 'space')); set('skincareStyles', ''); }
     set('mainImageUrl', '');
     set('otherImageUrls', '');
-    get('productImages').value = '';
+    get('mainProductImage').value = '';
+    get('otherProductImages').value = '';
     get('imageUploadStatus').textContent = '請分別加入這項商品的主圖片與其他圖片。';
     if (val('mode') === 'korea') {
       set('krwPrice', data.cost || '');
@@ -916,22 +920,14 @@ async function parseVendor() {
       if (parsedCategory === 'skincare') set('skincareCost', data.cost || '');
       else set('clothingCost', data.cost || '');
     }
-    currentCopy = cleanText(data.copy);
+    currentCopy = cleanText(data.copy || rawText);
     set('manualRetail', ''); set('manualVip', ''); set('manualVvip', '');
     set('priceNote', '');
     get('marketAdvice').textContent = '尚未偵測。';
     updateAll();
-    // V6.5.4：整理完成後一律自動加入工作台（拿掉 autoAdd 勾選框依賴）
-    const key = val('vendorCode') + '|' + val('productName') + '|' + getCost();
-    if (key !== lastAutoAddedKey) { await addTask(true); lastAutoAddedKey = key; }
-    // V6.5.2.4：AI 整理完成後自動偵測市場價格（不阻塞主流程，失敗也沒關係）
-    checkMarketPrice(true).then(() => {
-      // 偵測完成後再同步一次工作台，把 marketAdvice / priceNote 寫進去
-      if (currentEditingId) scheduleAutoSync();
-    });
+    get('parseStatus').textContent = '整理完成，請檢查文案與三層價格，再按儲存到上架工作台。';
   } catch (e) {
-    currentCopy = '解析失敗：' + e.message + '\n請確認 Vercel 的 GEMINI_API_KEY 已設定，或稍後再試。';
-    updateAll();
+    get('parseStatus').textContent = '整理未完成：' + e.message + '。原有文案保留，請重新整理。';
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ AI 自動整理商品';
@@ -980,7 +976,7 @@ async function addTask(silent = false) {
 
   // V6.5.4 防重複：用「商品標題」當唯一識別（不再比對成本，因為AI偶爾抓不一樣會誤判）。
   // 找到同名商品 → 就更新那一筆，不新增；找不到才新增。徹底杜絕重複與覆蓋別筆的問題。
-  const existing = tasks.find(t => t.title === title);
+  const existing = tasks.find(t => t.id === currentEditingId) || tasks.find(t => t.title === title);
   if (existing) {
     // 手動按「加入工作台」時，跳框確認；自動加入(silent)時，直接更新不打擾
     if (!silent) {
@@ -989,7 +985,7 @@ async function addTask(silent = false) {
       }
     }
     currentEditingId = existing.id;
-    await scheduleAutoSync();   // 直接觸發同步把現在欄位寫進那筆
+    await autoSyncCurrentTask();   // 僅按儲存時更新
     return;
   }
 
@@ -1090,12 +1086,12 @@ function editTask(i) {
   currentCopy = t.copy || '';
   updateAll();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  cloud('✏️ 已進入編輯模式，價格修改會自動同步', true);
+  cloud('✏️ 已進入編輯模式，修改後請按儲存到上架工作台', true);
 }
 
 function scheduleAutoSync() {
   clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(autoSyncCurrentTask, 700);
+  // 僅更新畫面；資料由使用者按儲存後寫入工作台。
 }
 
 async function autoSyncCurrentTask() {
@@ -1123,7 +1119,7 @@ async function autoSyncCurrentTask() {
   delete updated.id;
   const { error } = await supabaseClient.from('tasks').update({ content: JSON.stringify(updated) }).eq('id', currentEditingId);
   if (error) { cloud('自動同步失敗：' + error.message, false); return; }
-  cloud('⚡ 已自動同步工作台', true);
+  cloud('✅ 已儲存到上架工作台', true);
   await loadTasks();
 }
 
